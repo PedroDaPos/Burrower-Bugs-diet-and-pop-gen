@@ -1,0 +1,200 @@
+###########################
+### Workflow for trnF data analysis
+### Create custom database
+### Pedro Rodrigues
+### pd88715@uga.edu
+###########################
+
+# Create a custom database to classify trnF data
+# I will use Mothur to filter data and select the region of interest among multiple possible regions in the RefSeq chloroplast genome databases
+
+# Here, I use Mothur version 1.47, because running the following commands on previous versions resulted in a database missing important
+## taxa, such as plants in the genus Pinus. The reason is that version 1.47 added the flag "checkorient" to the command pcr.seqs, which will look
+## for target sequences using the opposite primer orientation, a feature that resulted in Pinus being "amplified" in this in silico PCR commmand.
+
+# In your command-line terminal, download genomic files in the NCBI RefSeq Plastids (it is divided in 5 parts)
+
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/plastid.1.1.genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/plastid.2.1.genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/plastid.3.1.genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/plastid.4.1.genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/plastid/plastid.5.1.genomic.fna.gz
+
+# decompress all files
+
+gunzip *.genomic.fna.gz
+
+# concatenate all parts together
+cat plastid.1.1.genomic.fna plastid.2.1.genomic.fna plastid.3.1.genomic.fna plastid.4.1.genomic.fna plastid.5.1.genomic.fna > plastid_allconc.genomic.fna
+
+# create an oligos file listing the forward and reverse primers
+(base) pd88715@ss-sub2 ref_seq_plastids$ cat oligos.file
+forward	GGTTCAAGTCCCTCTATCCC
+reverse	ATTTGAACTGGTGACACGAG
+
+# go to the directory where input files are
+
+cd /scratch/pd88715/ref_seq_plastids
+
+# run Mothur 1.47
+./mothur/mothur
+
+# run in silico PCR, allowing for up to 3 mismatches on forward and reverse primers
+## adding mismatches can cause more sequences to be "amplified", but sequences with more than one "amplicon" are discarded by Mothur. Most sequences discarded
+## seem to be of algae origin, although some Pinus sequences are also discarded, often because of multiple matches. Sequences that are very long often have repeated
+## motifs (or pseudogenes), see below for more information), and that is why Mothur often finds multiple matches for primers allowing multiple mismatches.
+
+pcr.seqs(fasta=plastid_allconc.genomic.fna, oligos=oligos.file, checkorient = TRUE, pdiffs=3, rdiffs=2)
+
+Using 48 processors.
+It took 131 secs to screen 7679 sequences.
+
+Output File Names:
+plastid_allconc.genomic.pcr.fna
+plastid_allconc.genomic.bad.accnos
+plastid_allconc.genomic.scrap.pcr.fna
+
+mothur > summary.seqs()
+Using plastid_allconc.genomic.pcr.fna as input file for the fasta parameter.
+
+Using 48 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	82	82	0	4	1
+2.5%-tile:	1	181	181	0	5	180
+25%-tile:	1	380	380	0	7	1798
+Median: 	1	401	401	0	8	3596
+75%-tile:	1	426	426	0	9	5394
+97.5%-tile:	1	22763	22763	0	14	7012
+Maximum:	1	156604	156604	796	259	7191
+Mean:	1	2474	2474	0	8
+# of Seqs:	7191
+
+It took 1 secs to summarize 7191 sequences.
+
+Output File Names:
+plastid_allconc.genomic.pcr.summary
+
+# Because the longest sequence we found in our data is about 8K bp, I decided to trim the trnF database to exclude anything larger than 10,000. Similarly,
+## I also decided to exclude sequences smaller than 100bp, because they are likely spurious.
+
+mothur > screen.seqs(fasta=plastid_allconc.genomic.pcr.fna, maxambig = 5, minlength=100, maxlength = 10000)
+
+
+mothur > summary.seqs(fasta=plastid_allconc.genomic.pcr.good.fna)
+
+Using 48 processors.
+
+		Start	End	NBases	Ambigs	Polymer	NumSeqs
+Minimum:	1	101	101	0	4	1
+2.5%-tile:	1	181	181	0	5	175
+25%-tile:	1	379	379	0	6	1748
+Median: 	1	399	399	0	8	3495
+75%-tile:	1	424	424	0	9	5242
+97.5%-tile:	1	523	523	0	14	6814
+Maximum:	1	9119	9119	5	28	6988
+Mean:	1	395	395	0	8
+# of Seqs:	6988
+
+It took 0 secs to summarize 6988 sequences.
+
+Output File Names:
+plastid_allconc.genomic.pcr.good.summary
+
+
+# In order to use this data in DADA2, fasta headers need to be replaced by taxa rank information.
+# The workflow to get taxa information for each sequence is the following
+## get list of accession codes -> split list in chunks of 1000 (so hpc can handle it and run job quickly) -> submit chunks to hpc, using NCBI Entrez to retrieve taxa information -> use custom scripts to replace headers in fasta files
+
+# Get list of accession codes
+cat plastid_allconc.genomic.pcr.good.fna | awk '$0 ~ ">" {if (NR > 1) {print c;} c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' | cut -f 1 > accs.txt
+
+# Divide file in smaller chunks (1000 rows each)
+split accs.txt -d --verbose  accs_
+
+# Run, as a cluster job, the custom script below to get taxonomical lineage information for each accs number
+
+########################################################
+########################################################
+
+#!/bin/bash
+#SBATCH --job-name=gettaxon		# Job name (testBowtie2)
+#SBATCH --partition=batch		# Partition name (batch, highmem_p, or gpu_p)
+#SBATCH --ntasks=1			# Run job in single task, by default using 1 CPU core on a single node
+#SBATCH --cpus-per-task=4	# CPU core count per task, by default 1 CPU core per task
+#SBATCH --mem=40G			# Memory per node (4GB); by default using M as unit
+#SBATCH --time=8:00:00              	# Time limit hrs:min:sec or days-hours:minutes:seconds
+#SBATCH --output=%A_%a.out		# Standard output log, e.g., testBowtie2_12345.out
+#SBATCH --error=%A_%a.err		# Standard error log, e.g., testBowtie2_12345.err
+#SBATCH --mail-user=pedro.rodrigues@uga.edu    # Where to send mail
+#SBATCH --mail-type=ALL
+#SBATCH --array=0-6          	# Mail events (BEGIN, END, FAIL, ALL)
+
+
+cd $SLURM_SUBMIT_DIR			# Change directory to job submission directory (Optional!)
+
+source ~/miniconda3/bin/activate
+
+conda init
+
+conda activate entrez
+
+for i in `cat accs_0${SLURM_ARRAY_TASK_ID}`; do
+echo ${i}
+efetch -db nucleotide -id ${i} -format docsum | xtract -pattern DocumentSummary -element TaxId | efetch -db taxonomy -format xml | xtract -pattern Taxon -tab "," \
+-group Taxon -KING "(-)" -PHYL "(-)" -CLSS "(-)" -ORDR "(-)" -FMLY "(-)" -GNUS "(-)" \
+-block "*/Taxon" -match "Rank:kingdom" -KING ScientificName \
+-block "*/Taxon" -match "Rank:phylum" -PHYL ScientificName \
+-block "*/Taxon" -match "Rank:class" -CLSS ScientificName \
+-block "*/Taxon" -match "Rank:order" -ORDR ScientificName \
+-block "*/Taxon" -match "Rank:family" -FMLY ScientificName \
+-block "*/Taxon" -match "Rank:genus" -GNUS ScientificName \
+-group Taxon -tab "," -element "&KING" "&PHYL" "&CLSS" "&ORDR" "&FMLY" "&GNUS" \
+-element ScientificName >> headers_taxonomy_part${SLURM_ARRAY_TASK_ID}.txt; done
+
+########################################################
+########################################################
+
+# Combine all taxonomy lineage files into a single file
+
+cat headers_taxonomy_part0b.txt headers_taxonomy_part1b.txt headers_taxonomy_part2b.txt headers_taxonomy_part3b.txt headers_taxonomy_part4b.txt headers_taxonomy_part5b.txt headers_taxonomy_part6.txt > headers_taxonomy_All.txt
+
+paste accs.txt headers_taxonomy_All.txt > accs_and_taxonomy.txt
+
+# nice little code to replace all headers from a fasta file based on a list of new headers (without needing to match headers, assuming both files are in the same order)
+awk 'NR == FNR { o[n++] = $0; next } /^>/ && i < n { $0 = ">" o[i++] } 1' headers_taxonomy_All.txt plastid_allconc.genomic.pcr.good.fna > trnF_db11Feb22.fa
+
+# DADA2 requires that taxonomy is separated by ";", and our taxon information is comma-separated. This search and replaces every comma to ";"
+sed -i 's/,/;/g' trnF_db11Feb22.fa
+
+# After this taxonomy file was created, DADA2 identified one sequence with 8 taxon rank levels, instead of 7
+
+module load R
+R
+library(dada2)
+library(Biostrings)
+sq <- getSequences("./trnF_db11Feb22.fa")
+
+ids <- names(sq)
+
+lens <- sapply(strsplit(ids, ";"), length)
+
+> table(lens)
+lens
+   7    8
+6987    1
+
+> which(lens != 7)
+[1] 2574
+
+# Back on Unix, the following command shows the problematic sequence
+(base) pd88715@ss-sub3 ref_seq_plastids$ grep ">" trnF_db11Feb22.fa | sed -n 2574p
+>Viridiplantae;Streptophyta;Magnoliopsida;Poales;Poaceae;Eulalia;Eulalia aurea (Bory) Kunth; 1830
+
+# To fix it, use the command 'sed' for find and replace
+(base) pd88715@ss-sub3 ref_seq_plastids$ sed -i 's/Eulalia aurea (Bory) Kunth; 1830/Eulalia aurea/g' trnF_db11Feb22.fa
+(base) pd88715@ss-sub3 ref_seq_plastids$ grep ">" trnF_db11Feb22.fa | sed -n 2574p
+>Viridiplantae;Streptophyta;Magnoliopsida;Poales;Poaceae;Eulalia;Eulalia aurea
+
+
+# After this repair, this trnF database was accepted by DADA2
