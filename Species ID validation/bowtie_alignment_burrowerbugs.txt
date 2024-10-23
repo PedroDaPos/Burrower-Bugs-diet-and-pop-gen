@@ -1,0 +1,312 @@
+# Species identification via RAD-seq alignment to reference genomes
+# Bonus: Repair of fastq file containing unexpected characters
+# Pedro Rodrigues
+# pd88715@uga.edu
+
+# Premise: burrower bugs collected in southern GA via light-traps could not be easily distinguished between _Pangaeus_ or _Dallasiellus_. In addition, there was a possibility that we could have mistakenly sampled other species. To validate our identification and exclude any spurious sample from our data analysis, we aligned samples either to both our _P._ _bilineatus_ and _D._ _lugubris_ draft genomes. The code below describes the methodology for aligning samples against these genomes, as well as the metrics for classifying a sample as either "_P._ _bilineatus_", "_D._ _lugubris_" or "unknown".
+
+# As an example, the following describes how alignment and species classification was obtained for RAD-seq data that corresponds to one of the batches of samples also submitted for diet analysis (3rd batch)
+
+# Load Bowtie2 and SAMtools
+module load Bowtie2
+module load SAMtools
+
+# Run alignment
+## Index genome
+bowtie2-build peanut_burrower_refv1.fa high_mapper
+
+## Loop all samples and map to each reference genome (high_mapper and low_mapper)
+#!/bin/bash
+#SBATCH --job-name=map_bug           # Job name (testBowtie2)
+#SBATCH --partition=highmem_p           # Partition name (batch, highmem_p, or gpu_p)
+#SBATCH --ntasks=1                      # Run job in single task, by default using 1 CPU core on$
+#SBATCH --cpus-per-task=16              # CPU core count per task, by default 1 CPU core per task
+#SBATCH --mem=120G                      # Memory per node (4GB); by default using M as unit
+#SBATCH --time=15:00:00                 # Time limit hrs:min:sec or days-hours:minutes:seconds
+#SBATCH --output=%x_%j.out              # Standard output log, e.g., testBowtie2_12345.out
+#SBATCH --error=%x_%j.err               # Standard error log, e.g., testBowtie2_12345.err
+#SBATCH --mail-user=pedro.rodrigues@uga.edu    # Where to send mail
+#SBATCH --mail-type=ALL                 # Mail events (BEGIN, END, FAIL, ALL)
+
+# Load Bowtie2 and SAMtools
+module load Bowtie2
+module load SAMtools
+
+# Run alignment
+## Index low_mapper genome
+bowtie2-build peanut_burrower2_refv1.fa low_mapper
+
+ls *.fastq.gz | awk -F '[.]' '{print $1}' > file_list_bb3.txt
+
+for i in `cat file_list_bb3.txt`; do
+bowtie2 -p 8 -q --no-unal -k 20 -x high_mapper -U ${i}.fastq.gz  \
+          2>high_mapper_align_stats_${i}.txt| samtools view -@10 -Sb -o bowtie2_${i}.bam
+done;
+
+for i in `cat file_list_bb3.txt`; do
+bowtie2 -p 8 -q --no-unal -k 20 -x low_mapper -U ${i}.fastq.gz  \
+          2>low_mapper_align_stats_${i}.txt| samtools view -@10 -Sb -o bowtie2_${i}.bam
+done;
+
+
+# To summarize all results, the following code created a table where the general alignment percentage is listed for each sample and for each reference genome (high-mapper and low-mapper)
+
+=============================summarize_bowtie.sh=======================================
+#!/bin/bash
+
+# Initialize the table header
+echo -e "Sample Name\tHigh Mapper\tLow Mapper"
+
+# Loop through each high mapper file in the directory
+for high_file in high_mapper_align_stats*.txt; do
+# Extract the sample name from the high mapper file name
+sample_name=$(basename "$high_file" | cut -d'_' -f5-)
+
+# Extract the number from the sixth row of the high mapper file
+high_value=$(sed -n '6s/[^0-9.]*\([0-9.]*\).*/\1/p' "$high_file")
+
+# Find the corresponding low mapper file
+low_file="low_mapper_align_stats_${sample_name}"
+
+# Extract the number from the sixth row of the low mapper file
+low_value=$(sed -n '6s/[^0-9.]*\([0-9.]*\).*/\1/p' "$low_file")
+
+# Print the sample name and the extracted values in tab-separated format
+echo -e "${sample_name}\t${high_value}\t${low_value}"
+done
+=======================================================================================
+
+## To make it executable, type chmod +x filename
+## To save the table, run the command as following: ./summarize_bowtie.sh > summary_table_bowtie.txt
+
+# For Batch1 of these samples, barcode had to be translated to sample name. For this, we cross reference summary_table_bowtie.txt with Batch1_PBB_pop_key, to get sample names, which will be useful for determining which samples we should exclude from our diet analysis, based on species ID
+
+# for this, use this code in python
+
+# first, install pandas in your conda environment, and then run the following
+=======================================================================================
+import pandas as pd
+
+# Read the summary table
+summary_table = pd.read_csv('summary_table_bowtie.txt', sep='\t')
+
+# Read the pop key file
+pop_key = pd.read_csv('Batch1_PBB_pop_key.txt', sep='\t')
+
+# Merge the two tables based on partial matching between "Sample Name" and "barcode"
+summary_table['barcode'] = summary_table['Sample Name'].str.split('_').str[0]
+merged = summary_table.merge(pop_key, how='left', left_on='barcode', right_on='barcode')
+
+# Drop the temporary 'barcode' column
+merged.drop('barcode', axis=1, inplace=True)
+
+# Save the updated summary table
+merged.to_csv('summary_table_bowtie_updated.txt', sep='\t', index=False)
+=======================================================================================
+
+
+# Note: one sample failed to generate alignment data, see below re-try to align it
+
+bowtie2 -p 16 -q --no-unal -k 20 -x ../high_mapper -U GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq  \
+          2>high_mapper_align_stats_GTAGAGGA-AGAGGATA_S36_L002_R1_001.txt| samtools view -@10 -Sb -o bowtie2_GTAGAGGA-AGAGGATA_S36_L002_R1_001.bam
+
+# Error message - ASCII character found
+# To solve this problem, search for the offending sequence (based on approach suggested by "c.kraus" in https://www.biostars.org/p/119759/)
+
+cat GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq | perl -e '$line = 1; while (<>) {if(/[^[:ascii:]]/) {print "LINE: $line\n$_";} $line++;}'
+
+#Output
+(base) pd88715@ss-sub1 mikecrossley$ cat GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq | perl -e '$line = 1; while (<>) {if(/[^[:ascii:]]/) {print "LINE: $line\n$_";} $line++;}'
+LINE: 4889990
+GGTAATTCTTACAGATCTTGCGATCTCCTTTCTAATATATTGATGAAATGTGTCCCATCCTAAGGTCCTCTGGTATTTTATCTCCGTTCAGTACCAT#r{????W?@??
+                                                                                                         ?֎ ?????
+                                                                                                                ?r? ??
+ ?
+LINE: 4889991
+ ?>U ??A 2?? ś?
+ 9? c?@ ?o      ?j? m? sU	 !?G
+LINE: 4889992
+ 4~?
+     5?Y
+         z??
+             '?0 in? Yë 'D? {]?
+LINE: 4889993
+?	 ??
+LINE: 4889994
+ ?Q
+    `?~
+?7?y????W?@p?????,@Th|?????0DX???0?:?????Mb??Ď???@???h?????E?????
+                            Pdx???????t`Ldx?8$????????????,@Th|?????0DXl??????0
+                                                                               4H\p? ?  9 ? g ?  &	 ?	 ?	 }
+                                                                                                                           ?
+                                                                                                                             ?
+                                                                                                                               ?
+ ? ? ? ! G e ?   P ? ? ? Q  ( ? ? ? ? 7 T
+                                           ; ? h ?
+
+                                                    ?
+LINE: 4889995
+ ? ? J  ? ? ? ? ? } -
+LINE: 4889996
+ ? ? ? ?  4 S ? ] ? [ ? ? ? ? ?? ?? ?? ?? ?? :? C? t? ?? ?? ?? ?? ?? ?? ? F? e? R Z a x ? ? ? ? ?   1 ? u ? ? ? ? ? FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,FFFFFFFF:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+
+# The offending sequence starts at row 4889990 and ends at row 4889996. Let's take a look at neighboring rows of this sequence before we remove it.
+
+(base) pd88715@ss-sub1 mikecrossley$ sed -n "4889981,4889999p" GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq #notice the "p" here is just for subsetting the specific interval of rows
+@A01335:42:HHWTCDRXY:2:1215:2808:20823 1:N:0:GTAGAGGA+AGAGGATA
+GTATGAATGACATCCATTATTTATTAAGCAAGCATATTTAACTTAATTTTTAACACAAAAACTGGCCGCTTATTGGAGTAAAATAATCATCCACCCTTGGTTAATGAAAGGTGACCCCACCG
++
+::F:FFFFF:FFFFFFFFFFF:FFFFFFFFFF:FFFF:FF,FFFFF:FF:FFF:FF:FFFFFF::FFFFFFFFFFFF:FFFFFFFF:,FF::F:F:,F,FF:FFF,FFF,,:FFF,FFFF:,
+@A01335:42:HHWTCDRXY:2:1215:4815:20823 1:N:0:GTAGAGGA+AGAGGATA
+CAGCAGCAAGGGGGCTCCATCATGTTTTGGGCAGGAGTAATGCACGGGTCCAGAACTGAACTGATGCCCATCCAAGGGACCATGACTGCCAATTTTTACTTGAATGAGGTGTTAGAACCTAT
++
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:FFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+@A01335:42:HHWTCDRXY:2:1215:6081:20823 1:N:0:GTAGAGGA+AGAGGATA
+GGTAATTCTTACAGATCTTGCGATCTCCTTTCTAATATATTGATGAAATGTGTCCCATCCTAAGGTCCTCTGGTATTTTATCTCCGTTCAGTACCAT#r{????W?@??
+                                                                                                         ?֎ ?????
+                                                                                                                ?r? ??
+ ?
+ ?>U ??A 2?? ś?
+ 9? c?@ ?o      ?j? m? sU	 !?G
+ 4~?
+     5?Y
+         z??
+             '?0 in? Yë 'D? {]?
+?	 ??
+ ?Q
+    `?~
+?7?y????W?@p?????,@Th|?????0DX???0?:?????Mb??Ď???@???h?????E?????
+                            Pdx???????t`Ldx?8$????????????,@Th|?????0DXl??????0
+                                                                               4H\p? ?  9 ? g ?  &	 ?	 ?	 }
+                                                                                                                           ?
+                                                                                                                             ?
+                                                                                                                               ?
+ ? ? ? ! G e ?   P ? ? ? Q  ( ? ? ? ? 7 T
+                                           ; ? h ?
+
+                                                    ?
+ ? ? J  ? ? ? ? ? } -
+ ? ? ? ?  4 S ? ] ? [ ? ? ? ? ?? ?? ?? ?? ?? :? C? t? ?? ?? ?? ?? ?? ?? ? F? e? R Z a x ? ? ? ? ?   1 ? u ? ? ? ? ? FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,FFFFFFFF:FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+@A01335:42:HHWTCDRXY:2:1215:24397:21167 1:N:0:GTAGAGGA+AGAGGATA
+GCAGTGGGAGGAGTCGTGTTAAGGGCGCCCGTGGTCTTAATGCAAGCCAGTCTTTGGACTTTTTCAAGAGTTTTAAGGTTTATCCCTCTTTGTGCCGTATGCCACCAAACCAAACAAGCATA
++
+
+# The offending sequence entry actually starts at 4889989. Let's check to be sure we are able to isolate it completely.
+
+sed -n "4889989,4889996p" GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq  # That is the correct spot!
+
+# Now remove offending sequence (notice the "d" in the sed command below)
+sed "4889989,4889996d" GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq > repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+
+# Run mapping again
+#!/bin/bash
+#SBATCH --job-name=map_bug           # Job name (testBowtie2)
+#SBATCH --partition=highmem_p           # Partition name (batch, highmem_p, or gpu_p)
+#SBATCH --ntasks=1                      # Run job in single task, by default using 1 CPU core on$
+#SBATCH --cpus-per-task=16              # CPU core count per task, by default 1 CPU core per task
+#SBATCH --mem=120G                      # Memory per node (4GB); by default using M as unit
+#SBATCH --time=10:00:00                 # Time limit hrs:min:sec or days-hours:minutes:seconds
+#SBATCH --output=%x_%j.out              # Standard output log, e.g., testBowtie2_12345.out
+#SBATCH --error=%x_%j.err               # Standard error log, e.g., testBowtie2_12345.err
+#SBATCH --mail-user=pedro.rodrigues@uga.edu    # Where to send mail
+#SBATCH --mail-type=ALL                 # Mail events (BEGIN, END, FAIL, ALL)
+
+# Load Bowtie2 and SAMtools
+module load Bowtie2
+module load SAMtools
+
+# Run alignment
+## Index low_mapper genome
+#bowtie2-build peanut_burrower2_refv1.fa low_mapper
+
+#ls *.fastq | awk -F '[.]' '{print $1}' > file_list_mike.txt
+
+bowtie2 -p 16 -q --no-unal -k 20 -x ../high_mapper -U repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq  \
+          2>high_mapper_align_stats_GTAGAGGA-AGAGGATA_S36_L002_R1_001.txt| samtools view -@10 -Sb -o bowtie2_GTAGAGGA-AGAGGATA_S36_L002_R1_001.bam
+
+
+bowtie2 -p 16 -q --no-unal -k 20 -x ../low_mapper -U repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq  \
+          2>low_mapper_align_stats_GTAGAGGA-AGAGGATA_S36_L002_R1_001.txt| samtools view -@10 -Sb -o bowtie2_GTAGAGGA-AGAGGATA_S36_L002_R1_001.bam
+
+# Bowtie2 is still give error messages, in addition to many warnings of sequences being skipped because they were the wrong size.
+
+# After a few assessments, it was clear that this fastq file had at least a few more instances of incorrect formatting/characters inserted in these sequences
+# To fix these, I installed fastq_utils via miniconda
+conda create -n fastq_utils
+conda install bioconda::fastq_utils
+
+# Using fastq_utils I am able to more precisely find problems with fastq files such as the one above. For example, these are the problems found in GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4892912: file truncated
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4893324: file truncated
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4889988: file truncated
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4891244: sequence and quality don't have the same length 122!=114
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4892080: sequence and quality don't have the same length 30!=122
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4892496: sequence and quality don't have the same length 122!=10
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4892908: file truncated
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000
+ERROR: Error in file repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq: line 4893320: file truncated
+(fastq_utils) pd88715@ss-sub1 mikecrossley$ fastq_info repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+fastq_utils 0.25.2
+DEFAULT_HASHSIZE=39000001
+Scanning and indexing all reads from repaired_GTAGAGGA-AGAGGATA_S36_L002_R1_001.fastq
+CASAVA=1.8
+1200000Scanning complete.
+
+Reads processed: 1223330
+Memory used in indexing: ~91 MB
+------------------------------------
+Number of reads: 1223330
+Quality encoding range: 35 70
+Quality encoding: 33
+Read length: 122 122 122
+OK
+
+# After fixing these mistakes, I re-ran bowtie2 with this sample and there were no more issues!
+# Alignment stats for this file were manually added to the summary table that is in the published work. The repaired fastq file was also made available on NCBI, whereas the flawed file was discarded.
