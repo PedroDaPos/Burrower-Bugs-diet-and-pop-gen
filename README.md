@@ -8,3 +8,9 @@ In this repository we make available all code written for this study, to allow t
 
 ## Molecular validation of species identification
 Samples were sorted from light traps, and every specimen similar to _P._ _bilineatus_ was selected and their DNA extracted. Diet information was obtained from sequencing a total of  three batches of samples. For two batches of burrower bugs ("PBB2" and "PBB3"), DNA was submitted for both diet analysis (targeting the _trnF_ gene, PacBio sequencing at Washington State University) and for RAD-Seq sequencing (Illumina platform, service provided by SNPsaurus Inc.), whereas the remaining batch of samples ("PBB1") was only sequenced for _trnF_.
+
+## Building of a trnF database
+
+
+
+## Workflow for trnF data analysis
