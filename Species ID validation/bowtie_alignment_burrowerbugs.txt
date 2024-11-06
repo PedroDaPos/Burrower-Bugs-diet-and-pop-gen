@@ -3,9 +3,9 @@
 # Pedro Rodrigues
 # pd88715@uga.edu
 
-# Premise: burrower bugs collected in southern GA via light-traps could not be easily distinguished between _Pangaeus_ or _Dallasiellus_. In addition, there was a possibility that we could have mistakenly sampled other species. To validate our identification and exclude any spurious sample from our data analysis, we aligned samples either to both our _P._ _bilineatus_ and _D._ _lugubris_ draft genomes. The code below describes the methodology for aligning samples against these genomes, as well as the metrics for classifying a sample as either "_P._ _bilineatus_", "_D._ _lugubris_" or "unknown".
+# Premise: burrower bugs collected in southern GA by light-traps could not be easily distinguished between _Pangaeus_ or _Dallasiellus_. In addition, there was a possibility that we could have mistakenly sampled other species. To validate our identification and exclude any spurious sample from our data analysis, we aligned samples to both our _P._ _bilineatus_ and _D._ _lugubris_ draft genomes. The code below describes the methodology for aligning samples against these genomes, as well as the metrics for classifying a sample as either "_P._ _bilineatus_", "_D._ _lugubris_" or "unknown".
 
-# As an example, the following describes how alignment and species classification was obtained for RAD-seq data that corresponds to one of the batches of samples also submitted for diet analysis (3rd batch)
+# The following describes how alignment and species classification was obtained for RAD-seq data that corresponds to one of the batches of samples ("PBB3") also sampled for diet analysis. The same code was also adapted to get alignment information for the other two batches of burrower bugs sampled ("PBB1" and "PBB2").
 
 # Load Bowtie2 and SAMtools
 module load Bowtie2
@@ -79,9 +79,9 @@ done
 ## To make it executable, type chmod +x filename
 ## To save the table, run the command as following: ./summarize_bowtie.sh > summary_table_bowtie.txt
 
-# For Batch1 of these samples, barcode had to be translated to sample name. For this, we cross reference summary_table_bowtie.txt with Batch1_PBB_pop_key, to get sample names, which will be useful for determining which samples we should exclude from our diet analysis, based on species ID
+# For samples in the PBB1 batch, barcode had to be translated to sample name. For this, we cross reference summary_table_bowtie.txt with Batch1_PBB_pop_key, to get sample names, which will be useful for determining which samples we should exclude from our diet analysis, based on species ID
 
-# for this, use this code in python
+# for this task, use this code in python
 
 # first, install pandas in your conda environment, and then run the following
 =======================================================================================
@@ -308,5 +308,5 @@ Quality encoding: 33
 Read length: 122 122 122
 OK
 
-# After fixing these mistakes, I re-ran bowtie2 with this sample and there were no more issues!
+# After fixing these mistakes (by manually scanning and editing the fastq file, according to the coordinates obtained above), I re-ran bowtie2 with this sample and there were no more issues!
 # Alignment stats for this file were manually added to the summary table that is in the published work. The repaired fastq file was also made available on NCBI, whereas the flawed file was discarded.
