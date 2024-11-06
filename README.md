@@ -1,7 +1,7 @@
 # Burrower-Bugs-diet-and-pop-gen
  Data and Code associated to our study on the peanut burrower bug population genetics and molecular gut content analysis
 
-## "Intro"
+## Introduction
 _Pangaeus_ _bilineatus_, the peanut burrower bug, is an emerging peanut pest in North America. Belonging to the family Cydnidae, the nymphal stages of this insect can cause significant damage on peanut seeds, resulting in concerning losses for this industry. One of the main goals of our study was to characterize the population genetics of _P._ _bilineatus_ at different peanut farms in GA, a major part of the peanut industry worldwide. In addition, we also sampled plant DNA from these insects to gain further insight on host plant utilization by adult peanut burrowers - a key information for understanding how peanut and landscape may relate to burrower bug biology. In this study we also investigated the population genetics and diet breadth of another species, _Dallasiellus_ _lugubris_, another burrower bug commonly found in peanut farms. _D._ _lugubris_ shares morphological similarities with _P._ _bilineatus_, which results in mistaken identification of peanut burrower bug, in particular by untrained personnel. In addition, it is unclear whether _D._ _lugubris_ represents a threat for peanut production, since so little is known about its biology, including their range of host plant. We found an unexpected diversity of plant DNA associated to both burrower bug species, indicating that these insects are likely polyphagous. In addition, we found evidence that these insects can easily move between fields, as shown by the low genetic variability among the populations we sampled. Altogether, we describe for the first time dietary breadth and population dynamics for these insects, fundamental information that can help delineate future experiments that may result in more effective pest management strategies.
 
 In this repository we make available all code written for this study, to allow transparency and reproducibility of our data analyses and results.
@@ -20,7 +20,12 @@ In addition to confirming species identification via alignment of RAD-seq data t
 [Step-by-step for recreating our phylogenetic analyses of burrower bugs COI sequences](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Species%20ID%20validation/Sanger%20Sequencing%20and%20identification/tree_building_method.txt)
 
 ## Building of a trnF database
+There are well-curated databases for widely-used metabarcoding genes, such as the [BOLD](https://v3.boldsystems.org) database and their expert-curated _COI_ repository. The chloroplast _trnF_ barcoding gene, in comparison to _COI_ for example, is far less known and documented. The quantity of sequences in the NCBI nucleotide database, for instance, is smaller and not curated by experts (i.e. not independently validated), making _trnF_ more prone to misidentification by automated tools such as Blast. To decrease the chance of misidentification, we built a custom database for _trnF_ identification based on sequences available at the curated NCBI RefSeq plastid database.
 
+[Step-by-step to building a _trnF_ database compatible with DADDA2](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/custom_generate_database_worflow.txt)
 
+[trnF_db11Feb22.fa](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/trnF_db11Feb22.fa) our custom _trnF_ database created following the steps above
+
+[oligos files](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/oligos.file) required to build a custom database as described above
 
 ## Workflow for trnF data analysis
