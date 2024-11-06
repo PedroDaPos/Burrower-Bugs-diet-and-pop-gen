@@ -9,6 +9,16 @@ In this repository we make available all code written for this study, to allow t
 ## Molecular validation of species identification
 Samples were sorted from light traps, and every specimen similar to _P._ _bilineatus_ was selected and their DNA extracted. Diet information was obtained from sequencing a total of  three batches of samples. For two batches of burrower bugs ("PBB2" and "PBB3"), DNA was submitted for both diet analysis (targeting the _trnF_ gene, PacBio sequencing at Washington State University) and for RAD-Seq sequencing (Illumina platform, service provided by SNPsaurus Inc.), whereas the remaining batch of samples ("PBB1") was only sequenced for _trnF_.
 
+To validate species attribution to each sample, for all three batches of sequences, as well as to be able to cross reference species name in batches sequenced for both RAD-seq and trnF, all samples were subjected to alignment against draft genomes we generated for _Pangaeus_ _bilineatus_ and for _Dallasiellus_ _lugubris_. The following file describes the step-by-step process for obtaining alignment statistics. Accompanying files for this analysis are located in the folder linked below.
+
+[Step-by-step for aligning sequences to reference draft genomes](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Species%20ID%20validation/bowtie_alignment_burrowerbugs.txt)
+
+[Required files to reproduce the steps described in the link above](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/tree/main/Species%20ID%20validation)
+
+In addition to confirming species identification via alignment of RAD-seq data to draft genomes, we also sequenced COI for a subset of our study samples identified as _Dallasiellus_ _lugubris_, _Pangaeus_ _bilineatus_ and reference _Dallasiellus_ _lugubris_ specimens diagnosed by Dr. Mark Abney. This data was then compared to COI of other burrower bug species and outgroups, further validating our results based only on alignment to our reference draft genomes. It is worth noting that, before our study, NCBI and BOLD did not have any COI sequence available for _Dallasiellus_ _lugubris_.
+
+[Step-by-step for recreating our phylogenetic analyses of burrower bugs COI sequences](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Species%20ID%20validation/Sanger%20Sequencing%20and%20identification/tree_building_method.txt)
+
 ## Building of a trnF database
 
 
