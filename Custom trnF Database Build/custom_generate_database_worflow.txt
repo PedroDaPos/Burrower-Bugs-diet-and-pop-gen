@@ -42,7 +42,7 @@ cd /scratch/pd88715/ref_seq_plastids
 # run in silico PCR, allowing for up to 3 mismatches on forward and reverse primers
 ## adding mismatches can cause more sequences to be "amplified", but sequences with more than one "amplicon" are discarded by Mothur. Most sequences discarded
 ## seem to be of algae origin, although some Pinus sequences are also discarded, often because of multiple matches. Sequences that are very long often have repeated
-## motifs (or pseudogenes), see below for more information), and that is why Mothur often finds multiple matches for primers allowing multiple mismatches.
+## motifs (or pseudogenes), see below for more information, and that is why Mothur often finds multiple matches for primers allowing multiple mismatches.
 
 pcr.seqs(fasta=plastid_allconc.genomic.fna, oligos=oligos.file, checkorient = TRUE, pdiffs=3, rdiffs=2)
 
