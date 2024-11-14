@@ -22,7 +22,7 @@ In addition to confirming species identification via alignment of RAD-seq data t
 ## Building of a trnF database
 There are well-curated databases for widely-used metabarcoding genes, such as the [BOLD](https://v3.boldsystems.org) database and their expert-curated _COI_ repository. The chloroplast _trnF_ barcoding gene, in comparison to _COI_ for example, is far less known and documented. The quantity of sequences in the NCBI nucleotide database, for instance, is smaller and not curated by experts (i.e. not independently validated), making _trnF_ more prone to misidentification by automated tools such as Blast. To decrease the chance of misidentification, we built a custom database for _trnF_ identification based on sequences available at the curated NCBI RefSeq plastid database.
 
-[Step-by-step to building a _trnF_ database compatible with DADDA2](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/custom_generate_database_worflow.txt)
+[Step-by-step to building a _trnF_ database compatible with DADA2](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/custom_generate_database_worflow.txt)
 
 [trnF_db11Feb22.fa](https://github.com/PedroDaPos/Burrower-Bugs-diet-and-pop-gen/blob/main/Custom%20trnF%20Database%20Build/trnF_db11Feb22.fa) our custom _trnF_ database created following the steps above
 
