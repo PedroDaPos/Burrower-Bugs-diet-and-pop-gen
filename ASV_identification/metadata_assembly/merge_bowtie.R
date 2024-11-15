@@ -26,5 +26,6 @@ PAPR_samples <- summary_bowtie_PAPR %>% rename(Indiv_ID = Sample.Name) %>% mutat
 all_samples <- bind_rows(MC_part1, MC_part2, PAPR_samples)
 
 # Merge files and save
-merge_bowtie_metadata <- left_join(metadata_trnf, all_samples, by="Indiv_ID")
-write.csv(merge_bowtie_metadata, "./merge_bowtie_metadata.csv")
+merge_bowtie_metadata <- left_join(metadata_trnf, all_samples, by="Indiv_ID") %>% select(Site, collection_date, sample_name, Indiv_ID, sample_type, SequenceBatch, 
+                                                                                         Season, Month, Duplicated, barcode, Pop_ID, Date, Month.y, Year, High.Mapper, Low.Mapper, Sp.ID)
+write.csv(merge_bowtie_metadata, "./Burrower_bugs_metadata.csv")
