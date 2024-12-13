@@ -1,0 +1,128 @@
+---
+title: "trnF data analysis using DADA2 part-2"
+author: "Pedro Rodrigues"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+    fig_caption: yes
+
+fontsize: 14pt
+---
+
+# Part 2, adding results from blast search
+
+
+Prepare environment:
+```{r init, warning=FALSE, message=FALSE}
+
+setwd("/scratch/pd88715/ref_seq_plastids")
+set.seed("1805")
+
+library(dada2);packageVersion("dada2")
+library(Biostrings); packageVersion("Biostrings")
+library(ShortRead); packageVersion("ShortRead")
+library(ggplot2); packageVersion("ggplot2")
+library(reshape2); packageVersion("reshape2")
+library(gridExtra); packageVersion("gridExtra")
+library(phyloseq); packageVersion("phyloseq")
+library(dplyr); packageVersion("dplyr")
+```
+
+```{r more preparation, warning=FALSE, message=FALSE}
+pathPBB1 <- "../BurrowerBugs/PBB1"
+pathPBB2 <- "../BurrowerBugs/PBB2"
+pathPBB3 <- "../BurrowerBugs/PBB3" # CHANGE ME to location of the First Replicate fastq files
+path.out <- "Figures/"
+path.rds <- "RDS/"
+theme_set(theme_bw())
+```
+
+Load Data
+
+```{r phyloseq-load-improved-data}
+p_data.cleanOTU <- readRDS("RDS/p_data.cleanOTU.rds")
+p_data.cleanSampleData <- readRDS("RDS/p_data.cleanSampleData.rds")
+p_data.cleanOTUTaxaTable <- readRDS("RDS/p_data.cleanOTUTaxaTable.rds")
+p_data.cleanOTURefSeq <- readRDS("RDS/p_data.cleanOTURefSeq.rds")
+```
+
+Make Phyloseq object
+```{r phyloseq-make-object}
+p_data.clean <- phyloseq(otu_table(p_data.cleanOTU, taxa_are_rows = FALSE), 
+                   sample_data(p_data.cleanSampleData),
+                   tax_table(p_data.cleanOTUTaxaTable),
+                   refseq(p_data.cleanOTURefSeq))
+```
+
+
+>Blast was executed using script under the file name blast_ASV_pbb123.sh
+>PBB123_asv_03292023.csv (taxonomy table) was edited and every NA was changed if taxonomic information was available (a blast hit result)
+>NOTE: taxonomical assignments ranged from about 95% to 100% and some NAs remained with no classification via Blast
+#### Add new taxonomical information to Phyloseq object
+
+```{r add-new-taxon-table}
+new_tax_table <- read.csv("PBB123_asv_03292023_withBlastids.csv", row.names = 1)
+new_tax <- tax_table(as.matrix(new_tax_table))
+tax_table(p_data.clean) <- new_tax
+```
+
+## Exploratory analysis
+
+List all instances where Genus == NA
+```{r list-genus-NA}
+#tax_table(p_data.clean) %>% as("matrix") %>% as_tibble 
+p_data.clean %>%
+  subset_taxa(is.na(Genus)) %>%
+ tax_table()
+```
+
+All but two instance of Genus=NA are ASV where Kingdom is also NA. As a conservative approach, I will exclude everything that is not identified as Viridiplantae at the Kingdom level
+
+
+=-=-=-=-=-=-=- Legacy stuff - ignore - =-=-=-=-=-=-=-=-=-=-=-=-
+```{r fix-names-and-list-duplicate-samples}
+# ### NOTE: duplicates were found to be actual different samples; skip this
+#sample_data(p_data.clean)$Indiv_ID <- sub("_$","",sample_data(p_data.clean)$Indiv_ID)
+#find_duplicates <- sample_data(p_data.clean) %>% as("matrix") %>% as_tibble %>% select(c(Indiv_ID, Duplicated)) %>% arrange(Indiv_ID)
+```
+
+There is one instance where one sample lost its duplicate; in this case, I will change the column "duplicated" to "no" for sample MSC_33_2
+```{r fix-sample-MSC_33_2}
+# ### NOTE: duplicates were found to be actual different samples; skip this
+#find row at where sample is located 
+#order_original <- sample_data(p_data.clean) %>% as("matrix") %>% as_tibble() %>% select(c(Indiv_ID, Duplicated)) #row 9
+# change value in column "Duplicated" to "no"
+#sample_data(p_data.clean)$Duplicated[9] <- "no"
+#sample_data(p_data.clean) %>% as("matrix") %>% as_tibble %>% select(c(Indiv_ID, Duplicated)) %>% head(., n=10)
+```
+=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+Remove singletons if needed and taxa where Order = NA
+Remove instances where algae was identified
+Remove all duplicated samples #No duplicates; skip
+Remove samples where count is zero
+```{r prepare-for-downstream-diversity-analysis}
+tail(taxa_sums(p_data.clean) < 2)
+p_data.clean <- prune_taxa(taxa_sums(p_data.clean) > 1, p_data.clean) %>% subset_taxa(., Kingdom == "Viridiplantae")
+#p_data.clean <- subset_samples(p_data.clean, Duplicated=="no")
+p_data.clean <- subset_samples(p_data.clean, sample_sums(p_data.clean) > 0)
+```
+
+Sanity check - is there any NA left for Genus?
+```{r list-genus-NA-2}
+#tax_table(p_data.clean) %>% as("matrix") %>% as_tibble 
+p_data.clean %>%
+  subset_taxa(is.na(Genus)) %>%
+ tax_table()
+```
+
+only one ASV is NA (no hits via blast either)
+
+```{r save-progress}
+saveRDS(otu_table(p_data.clean), "RDS/p_data.cleanOTU_cleaningcompleted.rds")
+saveRDS(sample_data(p_data.clean), "RDS/p_data.cleanSampleData_cleaningcompleted.rds")
+saveRDS(tax_table(p_data.clean), "RDS/p_data.cleanOTUTaxaTable_cleaningcompleted.rds")
+saveRDS(refseq(p_data.clean), "RDS/p_data.cleanOTURefSeq_cleaningcompleted.rds")
+```

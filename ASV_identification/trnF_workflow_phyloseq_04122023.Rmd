@@ -1,0 +1,433 @@
+---
+title: "trnF data analysis using Phyloseq"
+author: "Pedro Rodrigues"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+    fig_caption: yes
+
+fontsize: 14pt
+---
+
+Prepare environment:
+```{r init, warning=FALSE, message=FALSE}
+
+setwd("/scratch/pd88715/ref_seq_plastids")
+set.seed("03302023")
+
+library(dada2);packageVersion("dada2")
+library(Biostrings); packageVersion("Biostrings")
+library(ShortRead); packageVersion("ShortRead")
+library(ggplot2); packageVersion("ggplot2")
+library(reshape2); packageVersion("reshape2")
+library(gridExtra); packageVersion("gridExtra")
+library(phyloseq); packageVersion("phyloseq")
+library(dplyr); packageVersion("dplyr")
+```
+
+```{r more preparation, warning=FALSE, message=FALSE}
+pathPBB1 <- "../BurrowerBugs/PBB1"
+pathPBB2 <- "../BurrowerBugs/PBB2"
+pathPBB3 <- "../BurrowerBugs/PBB3"
+path.out <- "Figures/"
+path.rds <- "RDS/"
+theme_set(theme_bw())
+```
+
+Load Data
+
+```{r phyloseq-load-improved-data}
+p_data.cleanOTU <- readRDS("RDS/p_data.cleanOTU_cleaningcompleted.rds")
+#p_data.cleanSampleData <- readRDS("RDS/p_data.cleanSampleData_cleaningcompleted.rds")
+p_data.cleanOTUTaxaTable <- readRDS("RDS/p_data.cleanOTUTaxaTable_cleaningcompleted.rds")
+p_data.cleanOTURefSeq <- readRDS("RDS/p_data.cleanOTURefSeq_cleaningcompleted.rds")
+```
+
+> Update April 2023
+> Mike told me that Worth 1 and 2 are different sites depending on the year of sampling; to correct for this, load an updated version of the metadata table
+
+```{r phyloseq-load-metadata}
+metadata <- read.table("./trnF_samples_metadata_with_IDS.csv", row.names = 3, sep = ",", header = TRUE)
+metadata$SequenceBatch <- as.factor(metadata$SequenceBatch)
+metadata$collection_date <- as.Date(metadata$collection_date, format = "%m/%d/%Y")
+metadata$Month <- factor(metadata$Month, levels = month.name)
+```
+
+
+Make Phyloseq object
+```{r phyloseq-make-object}
+p_data.clean <- phyloseq(otu_table(p_data.cleanOTU, taxa_are_rows = FALSE), 
+                   sample_data(metadata),
+                   tax_table(p_data.cleanOTUTaxaTable),
+                   refseq(p_data.cleanOTURefSeq))
+```
+
+
+Before starting, I realized that by filtering taxonomy by "Kingdom" we can still have possibly spurious sequences left in the dataset, such as ones that match mosses or algae
+
+Checking for mosses and others
+```{r are-there-mosses}
+# are there unexpected taxa?
+unique(tax_table(p_data.clean)[,3])
+```
+
+Mosses are the only taxa unexpected
+
+Remove mosses with the following command
+```{r remove-mosses}
+# How many ASVs are mossses?
+p_data.clean %>% subset_taxa(., Class == "Bryopsida") %>% tax_table() # two ASVs
+p_data.clean
+p_data.clean <- subset_taxa(p_data.clean, Class != "Bryopsida")
+p_data.clean # now there are two fewer ASVs
+```
+
+
+For plotting, scale counts to relative abundance
+```{r scale_abundance}
+p_data.clean_rel.ab <- transform_sample_counts(p_data.clean, function(x) 100*x/sum(x))
+```
+
+First I will find out the distribution of sample size
+```{r sample-size-variation}
+len_sample <- as.data.frame(sample_sums(p_data.clean))
+median(len_sample$`sample_sums(p_data.clean)`)
+mean(len_sample$`sample_sums(p_data.clean)`)
+min(len_sample$`sample_sums(p_data.clean)`)
+max(len_sample$`sample_sums(p_data.clean)`)
+```
+
+At this point I realized that since we have two different species in this dataset, it may make more sense to separate these species before rarefying
+After looking at sample collection information, DNA extraction, number of samples left in the freezer, it was concluded that only samples in batches 2 and 3 (trnF data) were also submitted to RAD-seq
+Therefore, this species separation excluded batch 1 data
+```{r separate-species-2}
+p_data.clean_batch1out <- subset_samples(p_data.clean, SequenceBatch != "1")
+Pbilineatus <- subset_samples(p_data.clean_batch1out, Species=="Pbilineatus") %>% prune_taxa(taxa_sums(.) > 1, .)
+Dlugubris <- subset_samples(p_data.clean_batch1out, Species=="Dlugubris") %>% prune_taxa(taxa_sums(.) > 1, .)
+Pbilineatus
+Dlugubris
+```
+
+Now, what is the sample size variation per species?
+```{r sample-size-variation-2}
+# P. bilineatus
+len_samplepb <- as.data.frame(sample_sums(Pbilineatus))
+median(len_samplepb$`sample_sums(Pbilineatus)`)
+mean(len_samplepb$`sample_sums(Pbilineatus)`)
+min(len_samplepb$`sample_sums(Pbilineatus)`)
+max(len_samplepb$`sample_sums(Pbilineatus)`)
+# D. lugubris
+len_sampledl <- as.data.frame(sample_sums(Dlugubris))
+median(len_sampledl$`sample_sums(Dlugubris)`)
+mean(len_sampledl$`sample_sums(Dlugubris)`)
+min(len_sampledl$`sample_sums(Dlugubris)`)
+max(len_sampledl$`sample_sums(Dlugubris)`)
+```
+
+To visualize distribution in each case, I will exclude the largest samples and focus on the other samples
+
+```{r plot-sample-size-pbilineatus}
+#Exclude largest samples to build histogram
+len_samplepb <-subset(len_samplepb, len_samplepb$`sample_sums(Pbilineatus)` < 1200)
+median(len_samplepb$`sample_sums(Pbilineatus)`)
+hist(len_samplepb$`sample_sums(Pbilineatus)`, 10)
+```
+```{r plot-sample-size-dlugubris}
+#Exclude largest samples to build histogram
+len_sampledl <-subset(len_sampledl, len_sampledl$`sample_sums(Dlugubris)` < 1200)
+median(len_sampledl$`sample_sums(Dlugubris)`)
+hist(len_sampledl$`sample_sums(Dlugubris)`, 10)
+```
+
+When extremely large samples are excluded, average number of reads per sample is under 100 reads per sample for either species.
+Increasing maxEE to 8 did not make a substantial change - the results here are very similar to the results obtained earlier with maxEE=2.
+It seems reasonable to use the cutoff for rarefying samples at 100 reads per sample, hopefully keeping close to half of the samples for each species. Since the cutoff is the same, then I can rarefy the p_data.clean, to run statistics to compare both species directly. If necessary, I can separate samples as well after they are rarefied.
+
+
+This time I will rarefy samples to 100 reads per sample.
+
+```{r rarefy-data-pbilineatus}
+p_data.clean_rarefied <- rarefy_even_depth(p_data.clean, sample.size = 100, 
+                                           verbose = FALSE, replace = TRUE)
+p_data.clean
+p_data.clean_rarefied
+```
+
+
+let's see what are the top 10 taxa
+```{r taxa-relative-abundance}
+relative_taxa_abundance <- (taxa_sums(p_data.clean_rarefied))/sum(taxa_sums(p_data.clean_rarefied))
+sort(relative_taxa_abundance,TRUE)[1:10]
+# When does relative abundance cross 90% ?
+sum(sort(relative_taxa_abundance,TRUE)[1:10]) # 53%
+sum(sort(relative_taxa_abundance,TRUE)[1:40]) # 87%
+sum(sort(relative_taxa_abundance,TRUE)[1:50]) # 92%
+sum(sort(relative_taxa_abundance,TRUE)[1:45]) # 90%
+```
+45 ASVs out of 129 correspond to 90% of all counts across all samples. We will focus on these 45 ASV.
+
+
+# Visualizing Patterns
+
+To facilitate visualizing, I will agglomerate all these ASV to the level of Family.
+
+```{r plot-barplot-top47-Site}
+top45 <- prune_taxa(names(sort(taxa_sums(p_data.clean_rarefied),TRUE)[1:45]), p_data.clean_rarefied)
+p <- plot_bar(top45, fill = "Family") + facet_wrap(~Site, scales="free_x", nrow=1) + theme(axis.text.x = element_blank())
+p
+# Save image in PDF
+pdf("Top45_per_Site_PBB123.pdf",height=12,width=21)
+p
+dev.off()
+```
+
+```{r plot-barplot-top47-Site-genus}
+top45 <- prune_taxa(names(sort(taxa_sums(p_data.clean_rarefied),TRUE)[1:45]), p_data.clean_rarefied)
+p <- plot_bar(top45, fill = "Genus") + facet_wrap(~Site, scales="free_x", nrow=1) + theme(axis.text.x = element_blank())
+p
+# Save image in PDF
+pdf("Top45_per_Site_PBB_genus.pdf",height=12,width=21)
+p
+dev.off()
+```
+
+Remove Colony (control)
+```{r plot-barplot-remove-Colony}
+# Remove control samples from analysis
+p_data.clean_Colony_out <-subset_samples(p_data.clean_rarefied, Site!="Colony")
+p_data.clean_Colony_out_no_rarefy <- subset_samples(p_data.clean, Site!="Colony")
+```
+
+Questions we have to answer
+
+(1) There are two species in this dataset, so the first thing we should do is separate them
+(2) Second, do they both eat peanuts?
+(3) Third, explore what explains their diet
+
+
+```{r separate-species}
+batches2and3 <- subset_samples(p_data.clean_Colony_out, SequenceBatch != "1")
+# included a step to remove taxa that may become singletons when sequence batch 1 is removed
+Pbilineatus <- subset_samples(batches2and3, Species == "Pbilineatus") %>% prune_taxa(taxa_sums(.) > 1, .) 
+Dlugubris <- subset_samples(batches2and3, Species == "Dlugubris") %>% prune_taxa(taxa_sums(.) > 1, .)
+```
+
+Plot Peanut only
+```{r plot-barplot-Peanut-only}
+plot_peanuts <- subset_taxa(p_data.clean_Colony_out, Genus=="Arachis")
+p <- plot_bar(plot_peanuts, fill = "Genus") + facet_wrap(~Site, scales="free_x", nrow=1) + theme(axis.text.x = element_blank())
+p
+# Save image in PDF
+pdf("Peanut_content_per_Site_PBB.pdf",height=12,width=21)
+p
+dev.off()
+
+```
+
+Plot Peanut for each species
+```{r plot-barplot-Peanut-only-2}
+plot_peanuts <- subset_taxa(p_data.clean_Colony_out, Genus=="Arachis") %>% subset_samples(., SequenceBatch!="1")
+p <- plot_bar(plot_peanuts, fill = "Genus") + facet_wrap(~sample_data(plot_peanuts)$Species, scales="free_x", nrow=1) + theme(axis.text.x = element_blank())
+p
+# Save image in PDF
+pdf("Arachis_detected_in_each_species.pdf",height=12,width=21)
+dev.off()
+```
+
+The plot above suggests that Dlugubris does not consume peanut. However, except for one sample, Pbilineatus was also negative for Arachis. Because of all the filtering and losses due to rarefying data, it might be worth to search for Arachis at samples before rarefying data
+
+```{r peanuts-before-rarefying}
+plot_peanuts_Dlugubris <- subset_taxa(p_data.clean_Colony_out_no_rarefy, Genus=="Arachis") %>% subset_samples(., SequenceBatch!="1") %>% subset_samples(., Species=="Dlugubris")
+plot_peanuts_Pbilineatus <- subset_taxa(p_data.clean_Colony_out_no_rarefy, Genus=="Arachis") %>% subset_samples(., SequenceBatch!="1") %>% subset_samples(., Species=="Pbilineatus")
+p1 <- plot_bar(plot_peanuts_Dlugubris, fill = "Genus") + theme(axis.text.x = element_blank()) + ggtitle("Dlugubris")
+p2 <- plot_bar(plot_peanuts_Pbilineatus, fill = "Genus") + theme(axis.text.x = element_blank()) + ggtitle("Pbilineatus")
+p1
+p2
+# Save image in PDF
+#pdf("Arachis_detected_in_each_species_before_rarefying_data.pdf",height=12,width=21)
+#p
+#dev.off()
+```
+
+
+```{r plot-barplot-Peanuts-gut-content-Season}
+p1 <- plot_bar(plot_peanuts_Dlugubris, fill = "Genus") + facet_wrap(~Season, scales="free_x", nrow=1) + theme(axis.text.x = element_blank()) + ggtitle("Dlugubris")
+p2 <- plot_bar(plot_peanuts_Pbilineatus, fill = "Genus") + facet_wrap(~Season, scales="free_x", nrow=1) + theme(axis.text.x = element_blank()) + ggtitle("Pbilineatus")
+p1
+p2
+# Save image in PDF
+#pdf("Peanut_content_per_Site_PBB.pdf",height=12,width=21)
+#p
+#dev.off()
+
+```
+
+It is clear that peanut is consumed by Dlugubris. However, we don't have sampling of Dlugubris for Spring at this point.
+Interestingly, peanuts are planted from April-May, and they are harvested 140-150 days after planting, that is between August and September/October, which includes all the three seasons we sampled (Spring, Summer, Fall) - source: National Peanut Board (https://www.nationalpeanutboard.org)
+
+```{r plot-richness-by-species-rarefied-data}
+p1 <- plot_richness(Dlugubris, x="Month", color="Site", measures=c("Observed")) + ggtitle("Dlugubris") + geom_jitter()
+p1
+p2 <- plot_richness(Pbilineatus, x="Month", color="Site", measures=c("Observed")) + ggtitle("Pbilineatus") + geom_jitter()
+p2
+#pdf("richness_PBB.pdf",height=12,width=21)
+#p
+#dev.off()
+```
+
+```{r ordination}
+# For all data
+p_data.c_r_ord <- ordinate(p_data.clean_Colony_out, "PCoA", "bray")
+p_data.c_r_dist <- phyloseq::distance(p_data.clean_Colony_out, method = "bray")
+p1 <- plot_ordination(p_data.clean_Colony_out, p_data.c_r_ord, type="sample", color="Season", shape="Species", title = "All data")+ geom_point(size=5)
+p1
+
+# For data only identified as either Pbilineatus or Dlugubris
+filt_data <- subset_samples(p_data.clean_Colony_out, SequenceBatch != "1") %>% prune_taxa(taxa_sums(.) > 1, .)
+filt_data_ord <- ordinate(filt_data, "PCoA", "bray")
+filt_data_dist <- phyloseq::distance(filt_data, method = "bray")
+p2 <- plot_ordination(filt_data, filt_data_ord, type="sample", color="Season", shape="Species", title = "Only Dlugubris and Pbilineatus")+ geom_point(size=5)
+p2
+
+# Save images in PDF
+pdf("PCA_PBB_all.pdf",height=12,width=21)
+p1
+dev.off()
+pdf("PCA_PBB_batches2and3.pdf",height=12,width=21)
+p2
+dev.off()
+```
+
+```{r finding core gut content for Pbilineatus}
+library(metagMisc)
+# Following taxa shared by 50% of Pbilineatus samples, for all seasons and then per season
+core_Pbilineatus <- phyloseq_filter_prevalence(Pbilineatus, prev.trh = 0.5, abund.trh = NULL)
+tax_table(core_Pbilineatus)
+subset_samples(core_Pbilineatus, sample_sums(core_Pbilineatus) > 0)
+core_PbilineatusSpring <- subset_samples(Pbilineatus, Season == "Spring") %>% phyloseq_filter_prevalence(., prev.trh = 0.5, abund.trh = NULL) # 4 samples
+tax_table(core_PbilineatusSpring)
+subset_samples(core_PbilineatusSpring, sample_sums(core_PbilineatusSpring) > 0)
+core_PbilineatusSummer <- subset_samples(Pbilineatus, Season == "Summer") %>% phyloseq_filter_prevalence(., prev.trh = 0.5, abund.trh = NULL) # 6 samples
+tax_table(core_PbilineatusSummer)
+subset_samples(core_PbilineatusSummer, sample_sums(core_PbilineatusSummer) > 0)
+core_PbilineatusFall <- subset_samples(Pbilineatus, Season == "Fall") %>% phyloseq_filter_prevalence(., prev.trh = 0.4, abund.trh = NULL) # 5 samples
+tax_table(core_PbilineatusFall)
+subset_samples(core_PbilineatusFall, sample_sums(core_PbilineatusFall) > 0)
+```
+
+```{r finding core gut content for Dlugubris}
+# Following, taxa shared by 20% of the samples for Dlugubris, in general and per season
+# Using 20% because above this threshold no ASV is found
+core_Dlugubris <- phyloseq_filter_prevalence(Dlugubris, prev.trh = 0.2, abund.trh = NULL) #33 samples total
+tax_table(core_Dlugubris)
+subset_samples(core_Dlugubris, sample_sums(core_Dlugubris) > 0) #8 samples left
+core_DlugubrisSummer <- subset_samples(Dlugubris, Season == "Summer") %>% phyloseq_filter_prevalence(., prev.trh = 0.2, abund.trh = NULL) # 7 samples
+tax_table(core_DlugubrisSummer)
+subset_samples(core_DlugubrisSummer, sample_sums(core_DlugubrisSummer) > 0) # 3 samples left
+core_DlugubrisFall <- subset_samples(Dlugubris, Season == "Fall") %>% phyloseq_filter_prevalence(., prev.trh = 0.2, abund.trh = NULL) # 26 samples
+tax_table(core_DlugubrisFall)
+subset_samples(core_DlugubrisFall, sample_sums(core_DlugubrisFall) > 0) # 7 samples left
+```
+
+```{r permanova, message=FALSE}
+Site <- sample_data(p_data.clean_Colony_out)$Site
+Season <- sample_data(p_data.clean_Colony_out)$Season
+SequenceBatch <- sample_data(p_data.clean_Colony_out)$SequenceBatch
+
+library(vegan)
+adonis2(p_data.c_r_dist ~ SequenceBatch) #Sequence Batch has an effect!
+adonis2(p_data.c_r_dist ~ Site*Season, strata =SequenceBatch)
+
+# Comparing species
+Site <- sample_data(filt_data)$Site
+Season <- sample_data(filt_data)$Season
+SequenceBatch <- sample_data(filt_data)$SequenceBatch
+SampleSpecies <- sample_data(filt_data)$Species
+
+adonis2(filt_data_dist ~ SequenceBatch) #There is a batch effect!
+adonis2(filt_data_dist ~ Season+SampleSpecies*Site, strata = SequenceBatch)
+
+# If we exclude samples from Spring
+Summer_Fall_only <- subset_samples(filt_data, Season!="Spring")
+Summer_Fall_only_dist <- phyloseq::distance(Summer_Fall_only, method = "bray")
+
+Site <- sample_data(Summer_Fall_only)$Site
+Season <- sample_data(Summer_Fall_only)$Season
+SequenceBatch <- sample_data(Summer_Fall_only)$SequenceBatch
+SampleSpecies <- sample_data(Summer_Fall_only)$Species
+adonis2(Summer_Fall_only_dist ~ SequenceBatch) # No effect of Sequencing Batch - could it be a cofounding variable with Season?
+adonis2(Summer_Fall_only_dist ~ Season+SampleSpecies*Site)
+adonis2(Summer_Fall_only_dist ~ SampleSpecies*Season)
+adonis2(Summer_Fall_only_dist ~ SampleSpecies, strata = Season)
+
+# If we look at data only for batch 3 (where we are 100% sure the samples are the same between trnf data and RAD-seq)
+batch3_only <- subset_samples(p_data.clean_Colony_out, SequenceBatch == "3")
+batch3_only_dist <- phyloseq::distance(batch3_only, method = "bray")
+
+Site <- sample_data(batch3_only)$Site
+Season <- sample_data(batch3_only)$Season
+#SequenceBatch <- sample_data(batch3_only)$SequenceBatch
+SampleSpecies <- sample_data(batch3_only)$Species
+#adonis(batch3_only_dist ~ SequenceBatch)
+adonis2(batch3_only_dist ~ Site+SampleSpecies+Season)
+adonis2(batch3_only_dist ~ SampleSpecies, strata = Season)
+```
+
+Save all files for future reference
+```{r eval=FALSE, saving-otu_table-taxonomy_table-metadata_table-and-fasta-files}
+#rarefied dataset (Colony samples excluded)
+otu_table(p_data.clean_rarefied) %>% as("matrix") %>% as_tibble %>% write.csv("./rarefied_otu_table.csv")
+sample_data(p_data.clean_rarefied) %>% as("matrix") %>% as_tibble %>% write.csv("./rarefied_metadata_table.csv")
+tax_table(p_data.clean_rarefied) %>% as("matrix") %>% as_tibble %>% write.csv("./rarefied_tax_table.csv")
+refseq(p_data.clean_rarefied) %>%
+      Biostrings::writeXStringSet("./PBB123_rarefied_03302023.fasta", append=FALSE,
+                                  compress=FALSE, compression_level=NA, format="fasta")
+#data not rarefied with Colony samples included
+otu_table(p_data.clean)  %>% as("matrix") %>% as_tibble %>% write.csv("./otu_table03302023.csv")
+sample_data(p_data.clean) %>% as("matrix") %>% as_tibble %>% write.csv("./metadata_table03302023.csv")
+tax_table(p_data.clean) %>% as("matrix") %>% as_tibble %>% write.csv("./tax_table03302023.csv")
+refseq(p_data.clean) %>%
+      Biostrings::writeXStringSet("./PBB123_03302023_asv.fasta", append=FALSE,
+                                  compress=FALSE, compression_level=NA, format="fasta")
+```
+
+```{r export-summary-table-as-per-ycl6-function, warning=FALSE, message=FALSE}
+library("tidyverse")
+# for rarefied data
+write.table(p_data.clean_rarefied %>%
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_pbb123-rarefied03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+write.table(Pbilineatus %>%
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_Plineatus-rarefied03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+write.table(Dlugubris %>%
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_Dlugubris-rarefied03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+# for non-rarefied data
+write.table(p_data.clean %>% 
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_pbb03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+write.table(subset_samples(p_data.clean, SequenceBatch !=1 & Species == "Pbilineatus") %>%
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_Plineatus03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+write.table(subset_samples(p_data.clean, SequenceBatch !=1 & Species == "Dlugubris") %>%
+        psmelt() %>% arrange(OTU) %>% rename(ASV = OTU) %>%
+        select(ASV, Kingdom, Phylum, Class, Order, Family, Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "summary_Dlugubris03302023.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+```
+
+```{r include=FALSE, eval=FALSE}
+write.table(p_data.clean_Colony_out_no_rarefy %>% tax_glom(taxrank = "Genus") %>% 
+        transform_sample_counts(function(x) {x/sum(x)}) %>% psmelt() %>% 
+        select(Genus, Sample, Abundance) %>% spread(Sample, Abundance), 
+	file = "pbb_clean_norarefy.relative_abundance.genus.tsv", sep = "\t", quote = F, row.names = F, col.names = T)
+
+```
+
+
