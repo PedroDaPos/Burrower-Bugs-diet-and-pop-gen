@@ -12,7 +12,7 @@ fontsize: 14pt
 
 # Introduction
 
-We extracted DNA from three batches of burrower bugs (Cydnidae) collected in peanut fields grown in southern GA, USA. A portion of the chloroplast _trnF_ gene was sequenced from these samples, to characterize the diet of these insects. Here, these three batches of sequencing data, PBB1, PBB2, and PBB3, are quality-trimmed and noise-filtered before being combined and classified into plant taxa. Two species of burrower bugs are represented in this data, and we test whether their diet is different, how often they consume peanuts, and whether their diet changes across time and sampling location.
+We extracted DNA from three batches of burrower bugs (Cydnidae) collected in peanut fields grown in southern GA, USA. A portion of the chloroplast _trnF_ gene was sequenced from these samples, to characterize the diet of these insects. Here, these three batches of sequencing data, PBB1, PBB2, and PBB3, are quality-trimmed and noise-filtered before being combined and classified into plant taxa. Two species of burrower bugs are represented in this data, and we test whether their diet is different, identify instances of peanut consumption, and test whether their diet changes across time and sampling location.
 
 
 # Setup
@@ -25,7 +25,7 @@ Load packages
 setwd("/Users/ento-user/Documents/Github_Burrower_Bug/Burrower-Bugs-diet-and-pop-gen/ASV_identification")
 set.seed("1805")
 
-library(dada2);packageVersion("dada2") # ‘1.30.0’
+library(dada2);packageVersion("dada2") #‘1.30.0’
 library(Biostrings); packageVersion("Biostrings") #‘2.70.3’
 library(ShortRead); packageVersion("ShortRead") #‘1.60.0’
 library(ggplot2); packageVersion("ggplot2") #‘3.5.0’
@@ -33,7 +33,7 @@ library(reshape2); packageVersion("reshape2") #‘1.4.4’
 library(gridExtra); packageVersion("gridExtra") #‘2.3’
 library(phyloseq); packageVersion("phyloseq") #‘1.46.0’
 library(dplyr); packageVersion("dplyr") #‘1.1.4’
-library(vegan); packageVersion("vegan")
+library(vegan); packageVersion("vegan") #'2.6.4'
 ```
 
 ```{r more preparation, warning=FALSE, message=FALSE}
@@ -73,7 +73,7 @@ max(lens3)
 There is a wide range of lengths in these samples - this is expected. Let's check what is the minimum size expected based on the trnF database that I created using the NCBI RefSeq chloroplasts genomes
 
 In UNIX, I get the following result (see below)
-
+```
 (base) pd88715@ss-sub3 ref_seq_plastids$ cat trnF_db11Feb22.fa | awk '$0 ~ ">" {if (NR > 1) {print c;} c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' | cut -f 2 | sort -n | head
 101
 102
@@ -85,12 +85,12 @@ In UNIX, I get the following result (see below)
 103
 103
 103
-
+```
 >NOTE: one of the settings for building this reference trnF intergenic gene database is removing sequences smaller than 100bp
 
 ### Filter and Trim PBB3
 >Note on maxEE - for fungal identification using ITS1 it was found that increasing maxEE = 8 increased the number of reads per taxa expected to be present in the sample (Rolling et al. 2021); previously I used maxEE=2, and had to rarefy data in downstream analysis to 100 sequences/sample, which was very low; I am using maxEE=8 to increase the number of reads per plant species
-source  https://insight.jci.org/articles/view/151663
+source https://insight.jci.org/articles/view/151663
 
 ```{r filter3}
 filts3 <- file.path(pathPBB3, "noprimers", "filtered", basename(fnsPBB3))
@@ -165,7 +165,6 @@ min(lens)
 max(lens)
 ```
 
-
 Filter and Trim
 maxEE=8
 ```{r filter1}
@@ -173,7 +172,6 @@ filts1 <- file.path(pathPBB1, "noprimers", "filtered", basename(fnsPBB1))
 track1 <- filterAndTrim(nops1, filts1, minQ=3, minLen=100, maxN=0, rm.phix=FALSE, maxEE=8)
 track1
 ```
-
 
 Dereplicate:
 ```{r derep1, warning=FALSE, message=FALSE}
@@ -212,7 +210,6 @@ Save progress here before moving to PBB2.
 ```{r save seq table1}
 saveRDS(st1, "RDS/PBB1_2.rds")
 ```
-
 
 *Repeat for PBB2*
 
@@ -628,6 +625,13 @@ saveRDS(PBB_rr75, "RDS/PBB_rr75.rds")
 
 ## Are their diets different?
 
+First, I will check general patterns: what are the most common or prevalent diet items found in each species?
+
+```{r common-diet-items}
+
+
+```
+
 To test if their diets are different, I will use a Permanova test. One of the assumptions of this test is that variance is similar between the groups being compared (i.e. Pangaeus and Dallasiellus). To test if data dispersion is the same between groups, I am using betadisper.
 
 > From hereafter, I choose rarefaction at the 50% quartile depth, since it is the middle trade-off between number of samples and sequences per sample.
@@ -650,7 +654,7 @@ disper_SpID <- betadisper(bray_dist, metadata_rr50$Sp.ID)
 anova(disper_SpID)
 ```
 
-Test is significant (p < 0.05). Permanova may be robust even when dispersion of data is unequal among groups being compared. However, I suspect that unequal sampling in months and sites may cofound the test here (that is, for instance, if one species is more collected in one month/year and the other in a different month/year, diet may reflect plants available rather than differences in diet). Permanova is less robust for unequal sampling designs.
+Test is significant (p < 0.05). Permanova may be robust even when dispersion of data is unequal among groups being compared. However, I suspect that unequal sampling in months and sites may confound the test here (that is, for instance, if one species is more collected in one month/year and the other in a different month/year, diet may reflect plants available rather than differences in diet). Permanova is less robust for unequal sampling designs.
 
 How unequal is sampling (month and sites)?
 
@@ -723,7 +727,7 @@ Species_50 <- sample_data(permanova_rr50)$Sp.ID
 adonis2(formula = unifrac_dist ~ Species_50/Site_50 + Month_50, data = metadata, permutations = 999) # Species p = 0.004, Month p = 0.423, Species:Site p = 0.272
 ```
 
-3.3. Month is not significant! Perhaps plant composition is similar between both sites. I will test the data one more time, but using Month as strata (or block).
+3.3. Month is not significant! I will test the data one more time, but using Month as strata (or block).
 ```{r permanovMonthAsStrata}
 adonis2(formula = unifrac_dist ~ Species_50/Site_50, data = metadata, permutations = 999, strata = Month_50) # Species p = 0.118, Species:Site p =0.299
 ```
@@ -749,10 +753,6 @@ merge_phyloseq(dataset_sub, sample_data(datatest), refseq(refseq_dataset_sub))
 }
 
 # Apply to all datasets
-# datasets <- list(PBB_rr25, PBB_rr50, PBB_rr75)
-# names(datasets) <- c("PBB_rr25", "PBB_rr50", "PBB_rr75")
-# refeseq_phyloseq <- refseq(p_data.clean_rarefy)
-# datasets <- lapply(datasets, process_dataset)
 PBB_rr25_f <- process_dataset(PBB_rr25)
 PBB_rr50_f <- process_dataset(PBB_rr50)
 PBB_rr75_f <- process_dataset(PBB_rr75)
@@ -762,21 +762,18 @@ PBB_rr75_f <- process_dataset(PBB_rr75)
 #Load required packages
 library(microViz)
 library(phangorn)
-#library(doParallel)
+
 
 build_tree <- function(dataset_sub) {
   alignment <- AlignSeqs(refseq(dataset_sub), anchor=NA)
   phangAlign <- phyDat(as(alignment, "matrix"), type="DNA")
   dm <- dist.ml(phangAlign)
   treeNJ <- NJ(dm)
-  #mod.test <- modelTest(phangAlign) # Previous tests showed that the best model is TVM+G(4)+I
-  
   fit <- pml(treeNJ, data=phangAlign)
   fitTVM <- update(fit, k=4, inv=0.2)
   fitTVM <- optim.pml(fitTVM, model="TVM", optInv=TRUE, optGamma=TRUE,
               rearrangement="stochastic", control=pml.control(trace=0))
   rooted_tree <- midpoint(fitTVM$tree)
-  #detach("package:phangorn", unload=TRUE)
   merge_phyloseq(dataset_sub, rooted_tree)
 }
 
@@ -931,333 +928,12 @@ pseq_alpha_meta %>% filter(SequenceBatch != "1") %>% filter(Sp.ID=="Dlugubris") 
 ggsave("./Figures/Dlugubris_alpha_diversity_per_month_Dec2024.pdf", width=25, height=10)
 ```
 
-Diversity barplots and peanuts only barplots
+Diversity barplot (samples split by species and blocked by month)
 
 ```{r barplot-diversity-genus}
-# barplot_Pangaeus <- p_data.clean %>% ps_filter(Sp.ID=="Pbilineatus") %>%
-# tax_glom(taxrank = "Genus") %>% microbiome::transform(transform = "compositional") %>% aggregate_rare(level = "Genus", detection = 1/100, prevalence = 5/100)%>% psmelt() %>% filter(!is.na(Site))
-# barplot_Dlugubris <- p_data.clean %>% ps_filter(Sp.ID=="Dlugubris") %>%
-# tax_glom(taxrank = "Genus") %>% microbiome::transform(transform = "compositional") %>% aggregate_rare(level = "Genus", detection = 1/100, prevalence = 5/100)%>% psmelt() %>% filter(!is.na(Site))
-# 
-# bp_P <- ggplot(barplot_Pangaeus, aes(x=Sample, y= Abundance, fill= Genus))+
-#   geom_bar(stat = "identity", width=1) +
-#   font("x.text", size = 10, face = "bold") +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   theme_classic()+
-#   labs(x = NULL, y = "Relative Abundance (%)",
-#        title = "P. bilineatus") + 
-#   theme(axis.text.x = element_blank()) +
-#   theme(axis.title.x = element_blank()) +
-#   theme(axis.ticks.x = element_blank()) +
-#   theme(axis.line = element_blank()) +
-#   theme(plot.title = element_text(face = "italic"))
-# 
-# bp_D <- ggplot(barplot_Dlugubris, aes(x=Sample, y= Abundance, fill= Genus))+
-#   geom_bar(stat = "identity", width=1) +
-#   font("x.text", size = 10, face = "bold") +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   theme_classic()+
-#   labs(x = NULL, y = "Relative Abundance (%)",
-#        title = "D. lugubris") + 
-#   theme(axis.text.x = element_blank()) +
-#   theme(axis.title.x = element_blank()) +
-#   theme(axis.ticks.x = element_blank()) +
-#   theme(axis.line = element_blank()) +
-#   theme(plot.title = element_text(face = "italic"))
-# 
-# pseq_barplot %>% mutate(Sample = factor(Sample, levels= ID.order)) %>% mutate(Genus = factor(Genus, levels = rev(sort.taxa))) %>% ggplot(aes(x=Sample, y=Abundance, fill=Genus)) +
-#   geom_col(width=1)
-
-
-
-# sort_samples_and_genera <- function(data) {
-#   data %>%
-#     group_by(Month) %>%
-#     mutate(
-#       # Sort genera by their total abundance across all samples in the current month
-#       GenusOrder = factor(Genus, levels = pick(everything()) %>%
-#         count(Genus, wt = TotalAbundance) %>%
-#         arrange(desc(n)) %>%
-#         pull(Genus)),
-#       # Sort samples by abundance of the most abundant genus in the current month
-#       SampleOrder = factor(Sample, levels = pick(everything()) %>%
-#         filter(Genus == levels(GenusOrder)[1]) %>%
-#         arrange(desc(TotalAbundance)) %>%
-#         pull(Sample))
-#     ) %>%
-#     ungroup() %>%
-#     mutate(Sample = SampleOrder, Genus = GenusOrder) %>%
-#     select(-GenusOrder, -SampleOrder)
-# }
-# # Process and sort data
-# barplot_Pangaeus <- p_data.clean %>%
-#   ps_filter(Sp.ID == "Pbilineatus") %>%
-#   tax_glom(taxrank = "Genus") %>%
-#   microbiome::transform(transform = "compositional") %>%
-#   aggregate_rare(level = "Genus", detection = 1/100, prevalence = 5/100) %>%
-#   psmelt() %>%
-#   filter(!is.na(Site)) %>%
-#   mutate(TotalAbundance = Abundance) %>%
-#   sort_samples_and_genera()
-# 
-# barplot_Dlugubris <- p_data.clean %>%
-#   ps_filter(Sp.ID == "Dlugubris") %>%
-#   tax_glom(taxrank = "Genus") %>%
-#   microbiome::transform(transform = "compositional") %>%
-#   aggregate_rare(level = "Genus", detection = 1/100, prevalence = 5/100) %>%
-#   psmelt() %>%
-#   filter(!is.na(Site)) %>%
-#   mutate(TotalAbundance = Abundance) %>%
-#   sort_samples_and_genera()
-# 
-# # Combine all genera for consistent coloring
-# all_genera <- union(barplot_Pangaeus$Genus, barplot_Dlugubris$Genus)
-# color_palette <- viridis::viridis(length(all_genera))
-# names(color_palette) <- all_genera
-# 
-# # Set consistent factor levels for Genus
-# barplot_Pangaeus$Genus <- factor(barplot_Pangaeus$Genus, levels = all_genera)
-# barplot_Dlugubris$Genus <- factor(barplot_Dlugubris$Genus, levels = all_genera)
-# 
-# # Create barplots
-# bp_P <- ggplot(barplot_Pangaeus, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#   geom_bar(stat = "identity", width = 1) +
-#   scale_fill_manual(values = color_palette) +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   theme_classic() +
-#   labs(x = NULL, y = "Relative Abundance (%)", title = "P. bilineatus") +
-#   theme(
-#     axis.text.x = element_blank(),
-#     axis.title.x = element_blank(),
-#     axis.ticks.x = element_blank(),
-#     axis.line = element_blank(),
-#     plot.title = element_text(face = "italic")
-#   )
-# 
-# bp_D <- ggplot(barplot_Dlugubris, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#   geom_bar(stat = "identity", width = 1) +
-#   scale_fill_manual(values = color_palette) +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   theme_classic() +
-#   labs(x = NULL, y = "Relative Abundance (%)", title = "D. lugubris") +
-#   theme(
-#     axis.text.x = element_blank(),
-#     axis.title.x = element_blank(),
-#     axis.ticks.x = element_blank(),
-#     axis.line = element_blank(),
-#     plot.title = element_text(face = "italic")
-#   )
-# 
-# # Combine plots with a shared legend
-# combined_legend <- get_legend(
-#   ggplot(barplot_Pangaeus, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#     geom_bar(stat = "identity", width = 1) +
-#     scale_fill_manual(values = color_palette) +
-#     theme(legend.position = "bottom")
-# )
-# 
-# combined_plot <- plot_grid(
-#   bp_P + theme(legend.position = "none"),
-#   bp_D + theme(legend.position = "none"),
-#   labels = c("A", "B"),
-#   ncol = 1,
-#   align = "v"
-# )
-# 
-# final_plot <- plot_grid(combined_plot, combined_legend, ncol = 1, rel_heights = c(1, 0.1))
-# 
-# # Print the final plot
-# print(final_plot)
-
-
-# sort_samples_and_genera <- function(data) {
-#   data %>%
-#     group_by(Month) %>%
-#     mutate(
-#       # Sort genera by their total abundance across all samples in the current month
-#       GenusOrder = factor(Genus, levels = pick(everything()) %>%
-#         count(Genus, wt = TotalAbundance) %>%
-#         arrange(desc(n)) %>%
-#         pull(Genus)),
-#       # Sort samples by abundance of the most abundant genus in the current month
-#       SampleOrder = factor(Sample, levels = pick(everything()) %>%
-#         filter(Genus == levels(GenusOrder)[1]) %>%
-#         arrange(desc(TotalAbundance)) %>%
-#         pull(Sample))
-#     ) %>%
-#     ungroup() %>%
-#     mutate(Sample = SampleOrder, Genus = GenusOrder) %>%
-#     select(-GenusOrder, -SampleOrder)
-# }
-# 
-# # Apply sorting to each dataset
-# barplot_Pangaeus <- sort_samples_and_genera(barplot_Pangaeus)
-# barplot_Dlugubris <- sort_samples_and_genera(barplot_Dlugubris)
-# 
-# # Combine datasets to ensure a consistent color scheme
-# combined_data <- bind_rows(barplot_Pangaeus, barplot_Dlugubris)
-# 
-# # Define a consistent colorblind-friendly palette
-# color_palette <- scales::hue_pal()(length(unique(combined_data$Genus)))
-# names(color_palette) <- unique(combined_data$Genus)
-# 
-# # Create individual plots with consistent ordering and colors
-# bp_P <- ggplot(barplot_Pangaeus, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#   geom_bar(stat = "identity", width = 1) +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   scale_fill_manual(values = color_palette) +
-#   theme_classic() +
-#   labs(x = NULL, y = "Relative Abundance (%)", title = "P. bilineatus") +
-#   theme(
-#     axis.text.x = element_blank(),
-#     axis.title.x = element_blank(),
-#     axis.ticks.x = element_blank(),
-#     axis.line = element_blank(),
-#     plot.title = element_text(face = "italic")
-#   )
-# 
-# bp_D <- ggplot(barplot_Dlugubris, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#   geom_bar(stat = "identity", width = 1) +
-#   facet_wrap(~Month, scales = "free_x", nrow = 1) +
-#   scale_fill_manual(values = color_palette) +
-#   theme_classic() +
-#   labs(x = NULL, y = "Relative Abundance (%)", title = "D. lugubris") +
-#   theme(
-#     axis.text.x = element_blank(),
-#     axis.title.x = element_blank(),
-#     axis.ticks.x = element_blank(),
-#     axis.line = element_blank(),
-#     plot.title = element_text(face = "italic")
-#   )
-# 
-# # Create a unified legend using combined data
-# legend_plot <- ggplot(combined_data, aes(x = Sample, y = TotalAbundance, fill = Genus)) +
-#   geom_bar(stat = "identity") +
-#   scale_fill_manual(values = color_palette) +
-#   theme(legend.position = "bottom") +
-#   guides(fill = guide_legend(nrow = 2))
-# 
-# legend <- get_legend(legend_plot)
-# 
-# # Combine plots and legend using cowplot
-# final_plot <- plot_grid(
-#   plot_grid(bp_P, bp_D, ncol = 1, labels = c("A", "B")),
-#   legend,
-#   ncol = 1,
-#   rel_heights = c(1, 0.1)
-# )
-# 
-# # Print the final plot
-# print(final_plot)
-
-# library(cowplot)
-# 
-# process_phyloseq <- function(p_data) {
-#   # Step 1: Simplify the dataset
-#   p_data.clean <- p_data %>% 
-#     psmelt() %>% 
-#     filter(!is.na(Site)) %>% 
-#     filter(Site != "Colony")
-# 
-#   # Step 2: Replace NA in "Species" column
-#   filtered_no_NA <- p_data.clean %>% 
-#     mutate(Species = ifelse(is.na(Species) & !is.na(Genus), paste0(Genus, " spp."),
-#                     ifelse(is.na(Species) & !is.na(Family), paste0(Family, " spp."),
-#                     ifelse(is.na(Species) & !is.na(Order), paste0(Order, " spp."),
-#                     ifelse(is.na(Species) & !is.na(Class), paste0(Class, " spp."),
-#                     ifelse(is.na(Species) & !is.na(Phylum), paste0(Phylum, " spp."),
-#                     ifelse(is.na(Species) & !is.na(Kingdom), paste0(Kingdom, " spp."), Species)))))))
-# 
-#   # Step 3: Initialize result containers
-#   month_plots <- list()
-#   all_genus <- list()
-# 
-#   # Define species to process
-#   species_list <- unique(filtered_no_NA$Sp.ID)
-# 
-#   for (species in species_list) {
-#     species_data <- filtered_no_NA %>% filter(Sp.ID == species)
-# 
-#     # Step 3.1: Select relevant columns
-#     species_simple <- species_data %>% select(Sample, Abundance, Site, Month, Genus) %>%
-#       group_by(Genus) %>% mutate(Abundance = ifelse(!Abundance == "0", Abundance/sum(Abundance), Abundance)) %>%
-#       ungroup() %>% arrange(Sample, Genus)
-# 
-#     # Step 3.2: Group data by "Genus"
-#     grouped_data <- species_simple
-# 
-#     # Step 3.3: Process data for each "Month"
-#     for (month in unique(species_simple$Month)) {
-#       month_data <- grouped_data %>% filter(Month == month)
-# 
-#       # Step 3.3.1: Find the 10 most abundant "Genus" and rename others as "Other"
-#       sort.Genus <- month_data %>% 
-#         count(Genus, wt = Abundance) %>% 
-#         arrange(desc(n)) %>% 
-#         pull(Genus)
-# 
-#       # Step 3.3.4: Get Sample order
-#       Sample.order <- month_data %>% 
-#         filter(Genus == sort.Genus[1]) %>% 
-#         arrange(desc(Abundance)) %>% 
-#         pull(Sample)
-# 
-#       # Step 3.3.5: Factor Sample/Genus and save month-specific object
-#       month_data <- month_data %>% 
-#         mutate(Sample = factor(Sample, levels = Sample.order)) %>% 
-#         mutate(Genus = factor(Genus, levels = rev(sort.Genus)))
-# 
-#       all_genus[[paste(species, month, sep = "_")]] <- unique(month_data$Genus)
-# 
-#       # Step 5: Create ggplot stacked barplot
-#       month_plot <- month_data %>% 
-#         ggplot(aes(x = Sample, y = Abundance, fill = Genus)) + 
-#         geom_bar(stat = "identity", width = 1) + 
-#         theme_classic() + 
-#         theme(axis.text.x = element_blank(),
-#               axis.title.x = element_blank(),
-#               axis.ticks.x = element_blank(),
-#               axis.line = element_blank(),
-#               legend.position = "none") + 
-#         labs(title = month) + 
-#         theme(plot.title = element_text(hjust = 0.5)) + scale_color_viridis(discrete = TRUE, option = "D")+ scale_fill_viridis(discrete = TRUE)
-# 
-#       month_plots[[paste(species, month, sep = "_")]] <- month_plot
-#     }
-#   }
-# 
-#   # Step 4: Create figure legend and color palette
-#   combined_genus <- unique(unlist(all_genus))
-#   color_palette <- scales::hue_pal()(length(combined_genus))
-#   names(color_palette) <- combined_genus
-# 
-#   legend_plot <- ggplot(data.frame(Genus = names(color_palette), Value = 1), aes(x = Genus, y = Value, fill = Genus)) +
-#     geom_bar(stat = "identity") +
-#     scale_fill_manual(values = color_palette) +
-#     theme_void() +
-#     theme(legend.position = "bottom") +
-#     guides(fill = guide_legend(nrow = 2))
-# 
-#   # Step 6: Combine ggplots with cowplot
-#   species_plots <- list()
-# 
-#   for (species in species_list) {
-#     months <- sort(unique(filtered_no_NA %>% filter(Sp.ID == species) %>% pull(Month)))
-#     month_plot_list <- lapply(months, function(month) month_plots[[paste(species, month, sep = "_")]])
-#     species_title <- ifelse(species == "Pbilineatus", "*Pangaeus bilineatus*", "*Dallasiellus lugubris*")
-#     species_plots[[species]] <- cowplot::plot_grid(plotlist = month_plot_list, ncol = length(months), labels = species_title, label_size = 14, label_fontface = "italic")
-#   }
-# 
-#   final_plot <- cowplot::plot_grid(species_plots[["Pbilineatus"]], species_plots[["Dlugubris"]], nrow = 2, rel_heights = c(1, 1))
-# 
-#   final_plot_with_legend <- cowplot::plot_grid(final_plot, legend_plot, ncol = 1, rel_heights = c(9, 1))
-# 
-#   return(list(final_plot = final_plot_with_legend, species_plots = species_plots, month_plots = month_plots, color_palette = color_palette))
-# }
 
 library(cowplot)
 library(grid)
-library(gridExtra)
 
 process_phyloseq <- function(p_data) {
   # Step 1: Simplify the dataset
@@ -1279,7 +955,7 @@ process_phyloseq <- function(p_data) {
   month_plots <- list()
   all_genus <- list()
 
-  # Create color palette
+  # Step 4: Create color palette
   combined_genus <- unique(filtered_no_NA$Genus)
   color_palette <- RColorBrewer::brewer.pal(n= min(8, length(combined_genus)), name = "Dark2")
   if(length(combined_genus) > 8) {
@@ -1292,26 +968,26 @@ process_phyloseq <- function(p_data) {
   peanut[names(peanut) == "Arachis"] <- "black"
   color_palette <- relist(peanut, color_palette)
 
-  # Define species to process
+  # Step 5: Define species to process
   species_list <- c("Pbilineatus", "Dlugubris")
 
   for (species in species_list) {
     species_data <- filtered_no_NA %>% filter(Sp.ID == species)
 
-    # Step 3.1: Select relevant columns and sum Abundance by unique combinations
+    # Step 5.1: Select relevant columns and sum Abundance by unique combinations
     species_simple <- species_data %>% 
       select(Sample, Abundance, Site, Month, Genus) %>% 
       group_by(Sample, Site, Month, Genus) %>% 
       summarize(Abundance = sum(Abundance), .groups = "drop")
 
-    # Step 3.3: Process data for each "Month"
+    # Step 5.2: Process data for each "Month"
     for (month in unique(species_simple$Month)) {
       month_data <- species_simple %>% filter(Month == month)
       month_data <- month_data %>% group_by(Sample) %>%
       mutate(Abundance = ifelse(!Abundance == "0", Abundance/sum(Abundance), Abundance)) %>%
       ungroup()
       
-    # Step 3.3.1: Find the 20 most abundant "Genus" and rename others as "Other"
+    # Step 5.3: Find the 20 most abundant "Genus" and rename others as "Other"
       sort.Genus <- month_data %>% 
         count(Genus, wt = Abundance) %>%
         arrange(n) %>%
@@ -1320,7 +996,7 @@ process_phyloseq <- function(p_data) {
         filter(cumRelAb >= 0.3) %>%
         pull(Genus)
       
-      sort.Genus[length(sort.Genus)+1] <- "Arachis"
+      sort.Genus[length(sort.Genus)+1] <- "Arachis" # Add peanuts (Arachis) back, to make sure it is not placed in the "Other" category in the next step
       sort.Genus <- unique(sort.Genus)
 
       month_data <- month_data %>% 
@@ -1328,26 +1004,26 @@ process_phyloseq <- function(p_data) {
       summarize(Abundance = sum(Abundance), .groups = "drop")
 
 
-    # Step 3.3.3: Sum Abundance and sort Genus
+    # Step 5.4: Sum Abundance and sort Genus
       sort.Genus <- month_data %>% 
         count(Genus, wt = Abundance) %>% 
         arrange(desc(n)) %>% 
         pull(Genus)
 
-    # Step 3.3.4: Get Sample order
+    # Step 5.5: Get Sample order
       Sample.order <- month_data %>% 
         filter(Genus == sort.Genus[1]) %>% 
         arrange(desc(Abundance)) %>% 
         pull(Sample)
 
-    # Step 3.3.5: Factor Sample/Genus and save month-specific object
+    # Step 5.6: Factor Sample/Genus and save month-specific object
       month_data <- month_data %>% 
         mutate(Sample = factor(Sample, levels = Sample.order)) %>% 
         mutate(Genus = factor(Genus, levels = rev(sort.Genus)))
 
       all_genus[[paste(species, month, sep = "_")]] <- unique(month_data$Genus)
 
-    # Step 5: Create ggplot stacked barplot
+    # Step 6: Create ggplot stacked barplot
       month_plot <- month_data %>% 
         ggplot(aes(x = Sample, y = Abundance, fill = Genus)) + 
         geom_bar(stat = "identity", width = 1) + 
@@ -1369,8 +1045,7 @@ process_phyloseq <- function(p_data) {
   }
 
 
-
-  # Step 6: Combine ggplots with cowplot
+  # Step 7: Combine ggplots with cowplot (this isn't perfect, but can be improved in Inkscape)
   species_plots <- list()
 
   for (species in species_list) {
@@ -1378,41 +1053,31 @@ process_phyloseq <- function(p_data) {
     month_plot_list <- lapply(months, function(month) month_plots[[paste(species, month, sep = "_")]])
     species_title <- ifelse(species == "Pbilineatus", "Pangaeus bilineatus", "Dallasiellus lugubris")
     
-    #empty_plot <- ggplot() + theme_void() + theme(plot.margin=margin(0,0,0,0), 
-    #axis.title.y = element_text(hjust = 0, size =12, angle = 90, vjust = 0.5)) +
-      #labs(y = "Relative Abundance (%)")
   
     species_plots[[species]] <- cowplot::plot_grid(
-      #plotlist = c(empty_plot, month_plot_list), 
       plotlist = month_plot_list, 
       ncol = length(months) 
-      #labels = c(species_title, rep("", length(months))),
-      #label_size = 14, 
-      #label_fontface = "italic",
-      #align = "h",
-      #axis = "l")
     )
   }
 
   final_plot <- cowplot::plot_grid(species_plots[["Pbilineatus"]], species_plots[["Dlugubris"]], nrow = 2, rel_heights = c(1.2, 1))
   final_plot
   ggsave("./Figures/top70percentAbundanceGenus.pdf", width = 15, height = 10)
+
   
+  # Extra step: make a legend plot that unifies taxa from all months/species data. This plot can be manually added using Inkscape
   legend_plot <- ggplot(data.frame(Genus = names(color_palette)[names(color_palette) %in% unlist(all_genus)], Value = 1), aes(x = Genus, y = Value, fill = Genus)) + geom_col() +
   scale_fill_manual(values = color_palette) +
   theme_void() +
   theme(legend.position = "bottom") +
   guides(fill = guide_legend(nrow = 2))
-  
+
   legend <- get_legend(legend_plot)
   grid.newpage()
   pdf("./Figures/legend_top70percentAbundanceGenus.pdf", width=20, height=20)
   grid.draw(legend)
   dev.off()
 
-  #final_plot_with_legend <- cowplot::plot_grid(final_plot, legend_plot, ncol = 1, rel_heights = c(9, 1))
-
-  #return(list(final_plot = final_plot_with_legend, color_palette = color_palette))
   return(list(final_plot = final_plot, species_plots = species_plots, color_palette = color_palette))
 }
 q <- process_phyloseq(p_data.clean)
@@ -1421,11 +1086,33 @@ q <- process_phyloseq(p_data.clean)
 
 
 
-```{r plot-barplot-Peanut-only}
-plot_peanuts <- subset_taxa(p_data.clean_Colony_out, Genus=="Arachis")
-p <- plot_bar(plot_peanuts, fill = "Genus") + facet_wrap(~Site, scales="free_x", nrow=1) + theme(axis.text.x = element_blank())
-p
+```{r heatmapForAugust}
+heatmap_data <- p_data.clean %>%
+    psmelt() %>% 
+    filter(!is.na(Site)) %>% 
+    filter(Site != "Colony") %>%
+    filter(Kingdom == "Viridiplantae") %>%
+    mutate(Genus = ifelse(is.na(Genus) & !is.na(Family), paste0(Family, " spp."),
+                    ifelse(is.na(Genus) & !is.na(Order), paste0(Order, " spp."),
+                    ifelse(is.na(Genus) & !is.na(Class), paste0(Class, " spp."),
+                    ifelse(is.na(Genus) & !is.na(Phylum), paste0(Phylum, " spp."),
+                    ifelse(is.na(Genus) & !is.na(Kingdom), paste0(Kingdom, " spp."), Genus)))))) %>%
+    filter(Sp.ID == "Pbilineatus" | Sp.ID == "Dlugubris") %>%
+    filter(Month == "August") %>% group_by(Sample) %>%
+    mutate(total_abundance = sum(Abundance), Abundance = Abundance/total_abundance) %>%
+    ungroup()
+
+#filter instances where Genus has zero abundance across all samples
+heatmap_data <- heatmap_data %>% group_by(Genus) %>% filter(any(Abundance > 0)) %>% ungroup
+
+#create heatmap
+heatmap_august <- ggplot(heatmap_data_4_tbl, aes(x= Sample, y = Genus)) + geom_tile(aes(fill=Abundance)) +
+  scale_fill_gradient(low = "gray", high = "black") +
+  theme_minimal() + facet_grid(~Sp.ID, scales = "free") + rremove("x.text")
+
 # Save image in PDF
-pdf("Peanut_content_per_Site_PBB.pdf",height=12,width=21)
-p
+pdf("./Figures/test.pdf",height=12,width=21)
+heatmap_august
 dev.off()
+```
+
