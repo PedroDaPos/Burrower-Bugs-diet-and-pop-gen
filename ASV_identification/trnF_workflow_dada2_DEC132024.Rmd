@@ -628,8 +628,10 @@ saveRDS(PBB_rr75, "RDS/PBB_rr75.rds")
 First, I will check general patterns: what are the most common or prevalent diet items found in each species?
 
 ```{r common-diet-items}
-
-
+Pbilineatus_g <- p_data.clean %>% subset_samples(Sp.ID == "Pbilineatus") %>% subset_samples(!Site == "Colony") %>% tax_glom(taxrank = "Genus")
+Dlugubris_g <- tax_glom(Dlugubris, taxrank = "Genus")
+Pbilineatus_g %>% otu_table() %>% as.data.frame() %>% t() %>% rowSums() %>% sort(decreasing = TRUE) %>% head(10)
+Dlugubris_g %>% otu_table() %>% as.data.frame() %>% rowSums() %>% sort(decreasing = TRUE) %>% head(10)
 ```
 
 To test if their diets are different, I will use a Permanova test. One of the assumptions of this test is that variance is similar between the groups being compared (i.e. Pangaeus and Dallasiellus). To test if data dispersion is the same between groups, I am using betadisper.
@@ -720,6 +722,7 @@ Data is no longer overdispersed with UniFrac distances. We meet the Permanova as
 Site_50 <- sample_data(permanova_rr50)$Site
 Month_50 <- sample_data(permanova_rr50)$Month
 Species_50 <- sample_data(permanova_rr50)$Sp.ID
+metadata <- data.frame(sample_data(permanova_rr50))
 ```
 
 3.2. Testing the relative importance of Month as a co-variable. Note that Species is nested in Site, to account for site-specific variation in landscape
@@ -1087,6 +1090,9 @@ q <- process_phyloseq(p_data.clean)
 
 
 ```{r heatmapForAugust}
+
+# Note: using phyloseq to do all the filtering, and microbiome:transform to get data transformed to relative abundance, worked better than the code below for preparing data for plotting.
+
 heatmap_data <- p_data.clean %>%
     psmelt() %>% 
     filter(!is.na(Site)) %>% 
@@ -1116,3 +1122,9 @@ heatmap_august
 dev.off()
 ```
 
+```{r savetable}
+p_data.clean_mlt <- psmelt(p_data.clean)
+
+write.csv(p_data.clean_mlt, "./all_processed_PBB_data.csv")
+
+```
