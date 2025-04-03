@@ -591,7 +591,7 @@ When extremely large samples are excluded, average number of reads per sample is
 Rarefying samples at 100 reads per sample would keep close to half of the samples for each species in the dataset. So, a higher replicate size at the individual level (insect) at the cost of shallower sampling of the diet per individual. However, using a higher sample size cutoff for diet may be better to characterize food items commonly consumed by these insects, at the cost of decreasing the replication at the individual (insect) sampling size. Since the cutoff is the same, then I can rarefy the p_data.clean, to run statistics to compare both species directly. If necessary, I can separate samples as well after they are rarefied.
 
 How many samples do I loose by keeping only samples with a relatively deeper sequencing of diet?
-Rather than arbitrarily picking a single sequencing depth, I will compare the relative thresholds and number of samples kept in the dataset using quartiles (25,50,75) of the sample size variation in this dataset as a whole, using 1000 iterations via the rarefaction function from the metagMisc package.
+Rather than arbitrarily picking a single sequencing depth, I will compare the relative thresholds and number of samples kept in the dataset using quantiles (25,50,75) of the sample size variation in this dataset as a whole, using 1000 iterations via the rarefaction function from the metagMisc package.
 
 ```{r rarefy-function-from-metagMisc}
 #devtools::install_github("vmikk/metagMisc")
@@ -1091,36 +1091,154 @@ q <- process_phyloseq(p_data.clean)
 
 ```{r heatmapForAugust}
 
-# Note: using phyloseq to do all the filtering, and microbiome:transform to get data transformed to relative abundance, worked better than the code below for preparing data for plotting.
-
 heatmap_data <- p_data.clean %>%
-    psmelt() %>% 
-    filter(!is.na(Site)) %>% 
-    filter(Site != "Colony") %>%
-    filter(Kingdom == "Viridiplantae") %>%
-    mutate(Genus = ifelse(is.na(Genus) & !is.na(Family), paste0(Family, " spp."),
-                    ifelse(is.na(Genus) & !is.na(Order), paste0(Order, " spp."),
-                    ifelse(is.na(Genus) & !is.na(Class), paste0(Class, " spp."),
-                    ifelse(is.na(Genus) & !is.na(Phylum), paste0(Phylum, " spp."),
-                    ifelse(is.na(Genus) & !is.na(Kingdom), paste0(Kingdom, " spp."), Genus)))))) %>%
-    filter(Sp.ID == "Pbilineatus" | Sp.ID == "Dlugubris") %>%
-    filter(Month == "August") %>% group_by(Sample) %>%
-    mutate(total_abundance = sum(Abundance), Abundance = Abundance/total_abundance) %>%
-    ungroup()
+  subset_samples(!is.na(Site)) %>%
+  subset_samples(Site != "Colony") %>%
+  subset_taxa(Kingdom == "Viridiplantae") %>%
+  microbiome::aggregate_taxa(., "Genus") %>%
+  microbiome::transform(., "compositional") %>%
+  psmelt()  %>% filter(Sp.ID == "Pbilineatus" | Sp.ID == "Dlugubris") %>%
+    filter(Month == "August")
 
 #filter instances where Genus has zero abundance across all samples
 heatmap_data <- heatmap_data %>% group_by(Genus) %>% filter(any(Abundance > 0)) %>% ungroup
-
+heatmap_data$Sp.ID <- factor(heatmap_data$Sp.ID, levels = c("Pbilineatus", "Dlugubris"),
+                             labels = c("Pangaeus bilineatus", "Dallasiellus lugubris"))
 #create heatmap
-heatmap_august <- ggplot(heatmap_data_4_tbl, aes(x= Sample, y = Genus)) + geom_tile(aes(fill=Abundance)) +
-  scale_fill_gradient(low = "gray", high = "black") +
-  theme_minimal() + facet_grid(~Sp.ID, scales = "free") + rremove("x.text")
+heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(aes(fill=Abundance)) +
+  scale_fill_gradient(low = "lightgray", high = "darkblue") +
+  theme_minimal() + 
+  facet_grid(~Sp.ID, scales = "free") + rremove("x.text") +
+  theme(
+    text = element_text(size = 14),
+    axis.ticks.x=element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    strip.text.x = element_text(face = "italic"))
 
 # Save image in PDF
-pdf("./Figures/test.pdf",height=12,width=21)
+pdf("./Figures/heatmap.pdf",height=6,width=6)
 heatmap_august
 dev.off()
 ```
+
+So, is diet different among PBBs for August samples?
+
+```{r August-samples-different?}
+august_data <- p_data.clean %>%
+  subset_samples(!is.na(Site)) %>%
+  subset_samples(Site != "Colony") %>%
+  subset_taxa(Kingdom == "Viridiplantae") %>%
+  subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
+  subset_samples(Month == "August") %>%
+    prune_taxa(taxa_sums(.) > 0, .) %>%
+    prune_samples(sample_sums(.) > 0, .) %>%
+  microbiome::aggregate_taxa(., "Genus") %>%
+  microbiome::transform(., "compositional")
+august_otu <- t(as(otu_table(august_data), "matrix"))
+august_dist <- vegdist(august_otu, method = "bray")
+metadata_august <- data.frame(sample_data(august_data))
+august_disper <- betadisper(august_dist, metadata_august$Sp.ID)
+anova(august_disper)
+Species_pbb <- metadata_august$Sp.ID
+permanova <- adonis2(august_dist ~ Species_pbb,
+                    permutations=999)
+print(as.data.frame(permanova))
+```
+
+No significant difference found! What if we test differences related only to taxonomical composition (given less weight to relative abundance).
+
+```{r August-samples-different-taxonomy}
+# august_data <- p_data.clean %>%
+#   subset_samples(!is.na(Site)) %>%
+#   subset_samples(Site != "Colony") %>%
+#   subset_taxa(Kingdom == "Viridiplantae") %>%
+#   subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
+#   subset_samples(Month == "August") %>%
+#     prune_taxa(taxa_sums(.) > 0, .) %>%
+#     prune_samples(sample_sums(.) > 0, .) %>%
+#   microbiome::aggregate_taxa(., "Genus") %>%
+#   microbiome::transform(., "compositional")
+# august_otu <- t(as(otu_table(august_data), "matrix"))
+august_dist <- vegdist(august_otu, method = "jaccard")
+metadata_august <- data.frame(sample_data(august_data))
+august_disper <- betadisper(august_dist, metadata_august$Sp.ID)
+anova(august_disper)
+Species_pbb <- metadata_august$Sp.ID
+permanova <- adonis2(august_dist ~ Species_pbb,
+                    permutations=999)
+print(as.data.frame(permanova))
+```
+Still no differences!
+
+```{r species-overlap-histogram}
+histogram_data <- p_data.clean %>%
+    psmelt() %>% 
+    filter(!is.na(Site)) %>% 
+    filter(Site != "Colony") %>%
+    filter(Sp.ID != "unknown") %>%
+    select(c("Indiv_ID", "Sp.ID", "Season", "collection_date")) %>% 
+  summarise(.by = "Indiv_ID", across(c("Sp.ID", "Season", "collection_date"), max))
+histogram_data$Year <- format(as.Date(histogram_data$collection_date), "%Y")
+histogram_data$Month <- format(as.Date(histogram_data$collection_date), "%m")
+
+# We will redefine the Season variable here, because there are some mistakes currently, and we also would like to use the meteorological definition of seasons, which is based on temperature changes, instead of the astronomical definition.
+
+histogram_data <- histogram_data %>% mutate(season = case_when(
+          Month %in% c("06", "07", "08") ~ "Summer",
+          Month %in% c("09", "10", "11") ~ "Fall",
+          Month %in% c("03", "04", "05") ~ "Spring", TRUE ~ NA_character_
+))
+
+occurrence_pbb <- ggplot(histogram_data %>% mutate(Season = factor(Season, levels = c("Spring", "Summer", "Fall"))), aes(x = Season, fill = Sp.ID)) +
+  geom_bar(position = "dodge") +
+  scale_fill_manual(labels = c("<i>D. lugubris</i>", "<i>P. bilineatus</i>"),
+                    values = c("Pbilineatus" = "darkblue", "Dlugubris" = "lightblue")) +
+  facet_wrap(~ Year, scales = "free_x") +
+  labs(x = "Season", y = "Count", fill = "Species") +
+  theme(
+    text = element_text(size = 14),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.text = element_markdown(),
+    panel.background = element_blank(),
+    axis.ticks.x=element_blank()
+  )
+
+pdf("./Figures/PBB_occurence_by_season.pdf",height=4,width=6)
+occurrence_pbb
+dev.off()
+```
+
+```{r bananas}
+p_data.clean_mlt %>% filter(Genus == "Musa") %>% filter(Abundance > 0) %>% ggplot(., aes(x = Site, y = Abundance, fill = Indiv_ID)) + geom_bar(stat = "identity") + theme_classic()
+ggsave("./Figures/banana.pdf")
+```
+
+```{r sesamum}
+p_data.clean_mlt %>% filter(Genus == "Sesamum") %>% filter(Abundance > 0) %>% ggplot(., aes(x = Site, y = Abundance, fill = Indiv_ID)) + geom_bar(stat = "identity") + theme_classic()
+ggsave("./Figures/sesamum.pdf")
+```
+
+```{r corediet}
+# Prepare data and aggregate to Genus
+diet_raw <- p_data.clean %>% 
+  subset_samples(!is.na(Site)) %>%
+  subset_samples(Site != "Colony") %>%
+  subset_taxa(Kingdom == "Viridiplantae") %>%
+  subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
+    prune_taxa(taxa_sums(.) > 0, .) %>%
+    prune_samples(sample_sums(.) > 0, .) %>%
+  microbiome::aggregate_taxa(., "Genus")
+
+# Transform data to binary (presence/absence)
+
+diet_binary <- microViz::tax_transform(diet_raw, "binary")
+
+
+```
+
 
 ```{r savetable}
 p_data.clean_mlt <- psmelt(p_data.clean)
@@ -1128,3 +1246,6 @@ p_data.clean_mlt <- psmelt(p_data.clean)
 write.csv(p_data.clean_mlt, "./all_processed_PBB_data.csv")
 
 ```
+
+
+
