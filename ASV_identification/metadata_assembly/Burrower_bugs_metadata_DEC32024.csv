@@ -1,8 +1,4 @@
 Site,collection_date,sample_name,Indiv_ID,sample_type,SequenceBatch,Season,Month,Duplicated,barcode,Pop_ID,Date,Month.y,Year,High.Mapper,Low.Mapper,Sp.ID,mol.ID
-Worth2_21,8/31/21,w2-831-1.fastq,2_8_31_1,sample,3,Summer,August,no,TCCTGAGC-TACTCCTT,Worth2_21,8/31/21,8,21,8.97,82.42,Dlugubris,yes
-Worth2_21,8/31/21,w2-831-2.fastq,2_8_31_2,sample,3,Summer,August,no,TCCTGAGC-AGGCTTAG,Worth2_21,8/31/21,8,21,9.5,81.55,Dlugubris,yes
-Worth2_21,8/31/21,w2-831-3.fastq,2_8_31_3,sample,3,Summer,August,no,GGACTCCT-GCGATCTA,Worth2_21,8/31/21,8,21,9.84,83.4,Dlugubris,yes
-Worth2_21,8/31/21,w2-831-4.fastq,2_8_31_4,sample,3,Summer,August,no,GGACTCCT-ATAGAGAG,Worth2_21,8/31/21,8,21,9.01,84.24,Dlugubris,yes
 Worth1_20,8/10/20,bc1111--bc1174-Q40.fastq,MSC20_33_3_,sample,2,Summer,August,no,GAACACTG-TCTACTCT,Worth1_20,8/10/20,8,20,12.02,80.75,Dlugubris,yes
 Worth1_20,8/10/20,bc1104--bc1112-Q40.fastq,MSC20_33_4_,sample,2,Summer,August,no,CATACGTA-TCTACTCT,Worth1_20,8/10/20,8,20,10.98,81.99,Dlugubris,yes
 Worth2_20,8/24/20,bc1113--bc1174-Q40.fastq,MSC20_65_1_,sample,2,Summer,August,no,CCATATGT-AGGCTTAG,Worth2_20,8/24/20,8,20,9.56,69.67,Dlugubris,yes
@@ -14,13 +10,24 @@ Worth2_20,8/17/20,bc1113--bc1169-Q40.fastq,MSC20_87_3_,sample,2,Summer,August,no
 Worth2_20,8/17/20,bc1107--bc1113-Q40.fastq,MSC20_87_4_,sample,2,Summer,August,no,CCAAGCGA-TACTCCTT,Worth2_20,8/17/20,8,20,11.07,76.63,Dlugubris,yes
 Worth2_20,8/17/20,bc1108--bc1113-Q40.fastq,MSC20_87_5_,sample,2,Summer,August,no,TAAGTTCG-TACTCCTT,Worth2_20,8/17/20,8,20,11.67,73.92,Dlugubris,yes
 Randolph Pivot,6/30/20,bc1107--bc1112-Q40.fastq,MSC20_55_1_,sample,2,Summer,June,no,GGACTCCT-TCTACTCT,RandolphP_20,6/30/20,6,20,12.74,80.57,Dlugubris,yes
+Randolph Pivot,10/27/20,bc1097--bc1107-Q40.fastq,MSC20_69_1_,sample,2,Fall,October,no,CTCTCTAC-TATGCAGT,RandolphP_20,10/27/20,10,20,11.52,54.17,Dlugubris,yes
+Randolph Pivot,10/13/20,bc1107--bc1115-Q40.fastq,MSC20_91_2_,sample,2,Fall,October,no,GGACTCCT-TATGCAGT,RandolphP_20,10/13/20,10,20,12.86,81.48,Dlugubris,yes
+Randolph Pivot,10/13/20,bc1108--bc1115-Q40.fastq,MSC20_91_3_,sample,2,Fall,October,no,TAGGCATG-TATGCAGT,RandolphP_20,10/13/20,10,20,12.26,76.25,Dlugubris,yes
+Worth2_20,9/7/20,bc1103--bc1115-Q40.fastq,MSC20_66_1_,sample,2,Summer,September,no,ATGCCGCT-AGGCTTAG,Worth2_20,9/7/20,9,20,11.27,84.57,Dlugubris,yes
+Worth2_20,9/7/20,bc1097--bc1169-Q40.fastq,MSC20_66_2_,sample,2,Fall,September,no,CAAGTGTC-AGGCTTAG,Worth2_20,9/7/20,9,20,11.32,80.51,Dlugubris,yes
+Randolph Shed,9/22/20,bc1111--bc1169-Q40.fastq,MSC20_80_1_,sample,2,Fall,September,no,TCCTGAGC-AGGCTTAG,RandolphS_20,9/22/20,9,20,9.49,57.32,Dlugubris,yes
+Randolph Shed,9/22/20,bc1103--bc1112-Q40.fastq,MSC20_80_3_,sample,2,Fall,September,no,TAGGCATG-AGGCTTAG,RandolphS_20,9/22/20,9,20,10.81,59.06,Dlugubris,yes
+Randolph Pivot,9/1/20,bc1104--bc1114-Q40.fastq,MSC20_88_1_,sample,2,Summer,September,no,GTAGAGGA-TCTACTCT,RandolphP_20,9/1/20,9,20,12.28,82.93,Dlugubris,yes
+Randolph Pivot,9/1/20,bc1114--bc1174-Q40.fastq,MSC20_88_3_,sample,2,Summer,September,no,CGTACTAG-CTCCTTAC,RandolphP_20,9/1/20,9,20,11.04,76.7,Dlugubris,yes
+Randolph Pivot,9/1/20,bc1104--bc1115-Q40.fastq,MSC20_88_6_,sample,2,Summer,September,no,GGACTCCT-CTCCTTAC,RandolphP_20,9/1/20,9,20,10.89,75.02,Dlugubris,yes
+Worth2_21,8/31/21,w2-831-1.fastq,2_8_31_1,sample,3,Summer,August,no,TCCTGAGC-TACTCCTT,Worth2_21,8/31/21,8,21,8.97,82.42,Dlugubris,yes
+Worth2_21,8/31/21,w2-831-2.fastq,2_8_31_2,sample,3,Summer,August,no,TCCTGAGC-AGGCTTAG,Worth2_21,8/31/21,8,21,9.5,81.55,Dlugubris,yes
+Worth2_21,8/31/21,w2-831-3.fastq,2_8_31_3,sample,3,Summer,August,no,GGACTCCT-GCGATCTA,Worth2_21,8/31/21,8,21,9.84,83.4,Dlugubris,yes
+Worth2_21,8/31/21,w2-831-4.fastq,2_8_31_4,sample,3,Summer,August,no,GGACTCCT-ATAGAGAG,Worth2_21,8/31/21,8,21,9.01,84.24,Dlugubris,yes
 Worth1_21,10/5/21,w1-105-1.fastq,1_10_5_1,sample,3,Fall,October,no,AGGCAGAA-AGGCTTAG,Worth1_21,10/5/21,10,21,9.99,83.8,Dlugubris,yes
 Worth1_21,10/5/21,w1-105-2.fastq,1_10_5_2,sample,3,Fall,October,no,TCCTGAGC-GCGATCTA,Worth1_21,10/5/21,10,21,8.99,89.56,Dlugubris,yes
 Worth1_21,10/5/21,w1-105-3.fastq,1_10_5_3,sample,3,Fall,October,no,TCCTGAGC-ATAGAGAG,Worth1_21,10/5/21,10,21,8.89,84.01,Dlugubris,yes
 Worth2_21,10/5/21,w2-105-1.fastq,2_10_5_1,sample,3,Fall,October,no,CAGAGAGG-ATAGAGAG,Worth2_21,10/5/21,10,21,9.13,86.54,Dlugubris,yes
-Randolph Pivot,10/27/20,bc1097--bc1107-Q40.fastq,MSC20_69_1_,sample,2,Fall,October,no,CTCTCTAC-TATGCAGT,RandolphP_20,10/27/20,10,20,11.52,54.17,Dlugubris,yes
-Randolph Pivot,10/13/20,bc1107--bc1115-Q40.fastq,MSC20_91_2_,sample,2,Fall,October,no,GGACTCCT-TATGCAGT,RandolphP_20,10/13/20,10,20,12.86,81.48,Dlugubris,yes
-Randolph Pivot,10/13/20,bc1108--bc1115-Q40.fastq,MSC20_91_3_,sample,2,Fall,October,no,TAGGCATG-TATGCAGT,RandolphP_20,10/13/20,10,20,12.26,76.25,Dlugubris,yes
 Worth1_21,9/21/21,w1-921-1.fastq,1_9_21_1,sample,3,Fall,September,no,TAAGGCGA-GCGATCTA,Worth1_21,9/21/21,9,21,9.9,84.53,Dlugubris,yes
 Worth1_21,9/21/21,w1-921-10.fastq,1_9_21_10,sample,3,Fall,September,no,CGTACTAG-ATAGAGAG,Worth1_21,9/21/21,9,21,8.9,74.77,Dlugubris,yes
 Worth1_21,9/21/21,w1-921-12.fastq,1_9_21_12,sample,3,Fall,September,no,CGTACTAG-TCTACTCT,Worth1_21,9/21/21,9,21,8.91,86.36,Dlugubris,yes
@@ -59,13 +66,33 @@ Worth2_21,9/7/21,w2-97-2.fastq,2_9_7_2,sample,3,Summer,September,no,CTCTCTAC-TCT
 Worth2_21,9/7/21,w2-97-3.fastq,2_9_7_3,sample,3,Summer,September,no,CTCTCTAC-CTCCTTAC,Worth2_21,9/7/21,9,21,8.99,83.34,Dlugubris,yes
 Worth2_21,9/7/21,w2-97-4.fastq,2_9_7_4,sample,3,Summer,September,no,CTCTCTAC-TATGCAGT,Worth2_21,9/7/21,9,21,9.47,78.59,Dlugubris,yes
 Worth2_21,9/7/21,w2-97-5.fastq,2_9_7_5,sample,3,Summer,September,no,CTCTCTAC-TACTCCTT,Worth2_21,9/7/21,9,21,9.44,79.41,Dlugubris,yes
-Worth2_20,9/7/20,bc1103--bc1115-Q40.fastq,MSC20_66_1_,sample,2,Summer,September,no,ATGCCGCT-AGGCTTAG,Worth2_20,9/7/20,9,20,11.27,84.57,Dlugubris,yes
-Worth2_20,9/7/20,bc1097--bc1169-Q40.fastq,MSC20_66_2_,sample,2,Fall,September,no,CAAGTGTC-AGGCTTAG,Worth2_20,9/7/20,9,20,11.32,80.51,Dlugubris,yes
-Randolph Shed,9/22/20,bc1111--bc1169-Q40.fastq,MSC20_80_1_,sample,2,Fall,September,no,TCCTGAGC-AGGCTTAG,RandolphS_20,9/22/20,9,20,9.49,57.32,Dlugubris,yes
-Randolph Shed,9/22/20,bc1103--bc1112-Q40.fastq,MSC20_80_3_,sample,2,Fall,September,no,TAGGCATG-AGGCTTAG,RandolphS_20,9/22/20,9,20,10.81,59.06,Dlugubris,yes
-Randolph Pivot,9/1/20,bc1104--bc1114-Q40.fastq,MSC20_88_1_,sample,2,Summer,September,no,GTAGAGGA-TCTACTCT,RandolphP_20,9/1/20,9,20,12.28,82.93,Dlugubris,yes
-Randolph Pivot,9/1/20,bc1114--bc1174-Q40.fastq,MSC20_88_3_,sample,2,Summer,September,no,CGTACTAG-CTCCTTAC,RandolphP_20,9/1/20,9,20,11.04,76.7,Dlugubris,yes
-Randolph Pivot,9/1/20,bc1104--bc1115-Q40.fastq,MSC20_88_6_,sample,2,Summer,September,no,GGACTCCT-CTCCTTAC,RandolphP_20,9/1/20,9,20,10.89,75.02,Dlugubris,yes
+Colony,3/4/21,bc1099--bc1103-Q40.fastq,MSC_Colony_1_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1097--bc1174-Q40.fastq,MSC_Colony_10_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1098--bc1106-Q40.fastq,MSC_Colony_2_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1099--bc1104-Q40.fastq,MSC_Colony_3_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1099--bc1105-Q40.fastq,MSC_Colony_4_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1099--bc1169-Q40.fastq,MSC_Colony_5_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1097--bc1103-Q40.fastq,MSC_Colony_6_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1097--bc1104-Q40.fastq,MSC_Colony_7_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1097--bc1105-Q40.fastq,MSC_Colony_8_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Colony,3/4/21,bc1097--bc1106-Q40.fastq,MSC_Colony_9_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F1.fastq,control_F1,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F12.fastq,control_F12,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F16.fastq,control_F16,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F34.fastq,control_F34,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F60.fastq,control_F60,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F61.fastq,control_F61,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F64.fastq,control_F64,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F69.fastq,control_F69,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F74.fastq,control_F74,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,control_F79.fastq,control_F79,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,MikeCrossley-UGA-022421-bc1097--bc1105-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,MikeCrossley-UGA-022421-bc1099--bc1105-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,MikeCrossley-UGA-022421-bc1105--bc1111-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,MikeCrossley-UGA-022421-bc1111--bc1112-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,MikeCrossley-UGA-022421-bc1111--bc1169-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,unassigned.fastq,NA,NA,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
+NA,NA,bc1099--bc1108-Q40.fastq,NA_,sample,2,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
 Worth1_20,4/27/20,MikeCrossley-UGA-022421-bc1108--bc1112-Q40.fastq,MSC20_40_1_,sample,1,Spring,April,no,NA,Worth1_20,4/27/20,4,20,NA,NA,Pbilineatus,no
 Randolph Pivot,8/4/20,MikeCrossley-UGA-022421-bc1111--bc1175-Q40.fastq,MSC20_14_1_,sample,1,Summer,August,no,NA,RandolphP_20,8/4/20,8,20,NA,NA,Pbilineatus,no
 Worth2_20,8/3/20,MikeCrossley-UGA-022421-bc1099--bc1103-Q40.fastq,MSC20_35_2_,sample,1,Summer,August,no,NA,Worth2_20,8/3/20,8,20,NA,NA,Pbilineatus,no
@@ -95,42 +122,13 @@ Worth1_20,6/15/20,MikeCrossley-UGA-022421-bc1103--bc1114-Q40.fastq,MSC20_51_1_,s
 Worth2_20,6/22/20,MikeCrossley-UGA-022421-bc1097--bc1174-Q40.fastq,MSC20_6_1_,sample,1,Summer,June,no,NA,Worth2_20,6/22/20,6,20,NA,NA,Pbilineatus,no
 Randolph Pivot,6/16/20,MikeCrossley-UGA-022421-bc1105--bc1115-Q40.fastq,MSC20_60_1_,sample,1,Spring,June,no,NA,RandolphP_20,6/16/20,6,20,NA,NA,Pbilineatus,no
 Randolph Shed,6/30/20,MikeCrossley-UGA-022421-bc1107--bc1115-Q40.fastq,MSC20_62_1_,sample,1,Summer,June,no,NA,RandolphS_20,6/30/20,6,20,NA,NA,Pbilineatus,no
-Colony,3/4/21,bc1099--bc1103-Q40.fastq,MSC_Colony_1_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1097--bc1174-Q40.fastq,MSC_Colony_10_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1098--bc1106-Q40.fastq,MSC_Colony_2_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1099--bc1104-Q40.fastq,MSC_Colony_3_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1099--bc1105-Q40.fastq,MSC_Colony_4_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1099--bc1169-Q40.fastq,MSC_Colony_5_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1097--bc1103-Q40.fastq,MSC_Colony_6_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1097--bc1104-Q40.fastq,MSC_Colony_7_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1097--bc1105-Q40.fastq,MSC_Colony_8_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Colony,3/4/21,bc1097--bc1106-Q40.fastq,MSC_Colony_9_,sample,2,Spring,March,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
 Randolph Shed,3/31/20,MikeCrossley-UGA-022421-bc1107--bc1111-Q40.fastq,MSC20_18_1_,sample,1,Spring,March,no,NA,RandolphS_20,3/31/20,3,20,NA,NA,Pbilineatus,no
 Worth2_20,5/18/20,MikeCrossley-UGA-022421-bc1107--bc1112-Q40.fastq,MSC20_39_1_,sample,1,Spring,May,no,NA,Worth2_20,5/18/20,5,20,NA,NA,Pbilineatus,no
 Worth1_20,5/25/20,MikeCrossley-UGA-022421-bc1104--bc1114-Q40.fastq,MSC20_52_1_,sample,1,Spring,May,no,NA,Worth1_20,5/25/20,5,20,NA,NA,Pbilineatus,no
-NA,NA,control_F1.fastq,control_F1,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F12.fastq,control_F12,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F16.fastq,control_F16,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F34.fastq,control_F34,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F60.fastq,control_F60,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F61.fastq,control_F61,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F64.fastq,control_F64,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F69.fastq,control_F69,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F74.fastq,control_F74,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,control_F79.fastq,control_F79,control,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,MikeCrossley-UGA-022421-bc1097--bc1105-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,MikeCrossley-UGA-022421-bc1099--bc1105-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,MikeCrossley-UGA-022421-bc1105--bc1111-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,MikeCrossley-UGA-022421-bc1111--bc1112-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,MikeCrossley-UGA-022421-bc1111--bc1169-Q40.fastq,NA,sample,1,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,unassigned.fastq,NA,NA,3,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-NA,NA,bc1099--bc1108-Q40.fastq,NA_,sample,2,NA,NA,no,NA,NA,NA,NA,NA,NA,NA,NA,NA
-Worth2_21,8/10/21,w2-810-1.fastq,2_8_10_1,sample,3,Summer,August,no,TCCTGAGC-TATGCAGT,Worth2_21,8/10/21,8,21,80.44,8.65,Pbilineatus,yes
 Worth1_20,8/10/20,bc1105--bc1111-Q40.fastq,MSC20_33_1_,sample,2,Summer,August,no,CAAGTGTC-TCTACTCT,Worth1_20,8/10/20,8,20,79.56,12.18,Pbilineatus,yes
 Worth1_20,8/10/20,MikeCrossley-UGA-022421-bc1097--bc1108-Q40.fastq,MSC20_33_1_1,sample,1,Summer,August,yes,CAAGTGTC-TCTACTCT,Worth1_20,8/10/20,8,20,79.56,12.18,Pbilineatus,yes
 Worth1_20,8/3/20,bc1098--bc1107-Q40.fastq,MSC20_7_4_,sample,2,Summer,August,no,GTGCACAA-TCTACTCT,Worth1_20,8/3/20,8,20,71.96,10.37,Pbilineatus,yes
 Worth2_20,8/17/20,bc1103--bc1114-Q40.fastq,MSC20_87_6_,sample,2,Summer,August,no,ATGCCGCT-TACTCCTT,Worth2_20,8/17/20,8,20,68.69,10.6,Pbilineatus,yes
-Worth2_21,7/21/21,w2-721-1.fastq,2_7_21_1,sample,3,Summer,July,no,TCCTGAGC-TCTACTCT,Worth2_21,7/21/21,7,21,67.91,8.13,Pbilineatus,yes
 Worth1_20,6/29/20,bc1098--bc1103-Q40.fastq,MSC20_1_1_,sample,2,Summer,June,yes,CAAGTGTC-AGAGGATA,Worth1_20,6/29/20,6,20,75.01,9.66,Pbilineatus,yes
 Worth1_20,6/29/20,MikeCrossley-UGA-022421-bc1098--bc1103-Q40.fastq,MSC20_1_1_1,sample,1,Summer,June,no,CAAGTGTC-AGAGGATA,Worth1_20,6/29/20,6,20,75.01,9.66,Pbilineatus,yes
 Worth1_20,6/29/20,bc1098--bc1104-Q40.fastq,MSC20_1_2_,sample,2,Summer,June,no,GAGGTGTA-AGAGGATA,Worth1_20,6/29/20,6,20,82.7,10.73,Pbilineatus,yes
@@ -158,21 +156,23 @@ Worth2_20,6/29/20,bc1106--bc1115-Q40.fastq,MSC20_9_2_,sample,2,Summer,June,no,CC
 Worth2_20,6/29/20,MikeCrossley-UGA-022421-bc1097--bc1104-Q40.fastq,MSC20_9_2_1,sample,1,Summer,June,yes,CCAAGCGA-TATGCAGT,Worth2_20,6/29/20,6,20,86.17,13.31,Pbilineatus,yes
 Worth2_20,6/29/20,bc1115--bc1174-Q40.fastq,MSC20_9_3_,sample,2,Summer,June,no,TAAGTTCG-TATGCAGT,Worth2_20,6/29/20,6,20,77.09,10.78,Pbilineatus,yes
 Worth2_20,6/29/20,bc1115--bc1175-Q40.fastq,MSC20_9_4_,sample,2,Summer,June,no,ATGCCGCT-TATGCAGT,Worth2_20,6/29/20,6,20,84.71,11.1,Pbilineatus,yes
+Worth2_21,8/10/21,w2-810-1.fastq,2_8_10_1,sample,3,Summer,August,no,TCCTGAGC-TATGCAGT,Worth2_21,8/10/21,8,21,80.44,8.65,Pbilineatus,yes
+Worth2_21,7/21/21,w2-721-1.fastq,2_7_21_1,sample,3,Summer,July,no,TCCTGAGC-TCTACTCT,Worth2_21,7/21/21,7,21,67.91,8.13,Pbilineatus,yes
 Worth1_21,10/12/21,w1-1012-1.fastq,1_10_12_1,sample,3,Fall,October,no,TCCTGAGC-AGAGGATA,Worth1_21,10/12/21,10,21,85.96,11.26,Pbilineatus,yes
-Worth2_21,8/31/21,w2-831-5.fastq,2_8_31_5,sample,3,Summer,August,no,GGACTCCT-AGAGGATA,Worth2_21,8/31/21,8,21,8.68,8.98,unknown,yes
-Worth2_21,8/31/21,w2-831-6.fastq,2_8_31_6,sample,3,Summer,August,no,GGACTCCT-TCTACTCT,Worth2_21,8/31/21,8,21,0.31,0.86,unknown,yes
 Worth1_20,8/10/20,bc1106--bc1111-Q40.fastq,MSC20_33_2_,sample,2,Summer,August,no,GAGGTGTA-TCTACTCT,Worth1_20,8/10/20,8,20,10.83,9.11,unknown,yes
 Worth1_20,8/10/20,MikeCrossley-UGA-022421-bc1098--bc1105-Q40.fastq,MSC20_33_2_1,sample,1,Summer,August,yes,GAGGTGTA-TCTACTCT,Worth1_20,8/10/20,8,20,10.83,9.11,unknown,yes
-Worth2_21,7/21/21,w2-727-1.fastq,2_7_27_1,sample,3,Summer,July,no,TCCTGAGC-CTCCTTAC,Worth2_21,7/27/21,7,21,8.26,8.29,unknown,yes
 Randolph Shed,10/13/20,bc1098--bc1108-Q40.fastq,MSC20_74_1_,sample,2,Fall,October,no,GTTGAACC-GCGATCTA,RandolphS_20,10/13/20,10,20,3.48,8.03,unknown,yes
 Randolph Shed,10/13/20,bc1099--bc1106-Q40.fastq,MSC20_74_2_,sample,2,Fall,October,no,CCAAGCGA-GCGATCTA,RandolphS_20,10/13/20,10,20,3.07,6.26,unknown,yes
 Randolph Shed,10/13/20,bc1103--bc1111-Q40.fastq,MSC20_74_3_,sample,2,Fall,October,no,TAAGTTCG-GCGATCTA,RandolphS_20,10/13/20,10,20,3.35,5.22,unknown,yes
 Randolph Shed,10/13/20,bc1104--bc1111-Q40.fastq,MSC20_74_4_,sample,2,Fall,October,no,ATGCCGCT-GCGATCTA,RandolphS_20,10/13/20,10,20,2.92,2.01,unknown,yes
+Randolph Shed,9/22/20,bc1108--bc1111-Q40.fastq,MSC20_80_2_,sample,2,Fall,September,no,GGACTCCT-AGGCTTAG,RandolphS_20,9/22/20,9,20,4.92,23.71,unknown,yes
+Randolph Shed,9/22/20,bc1112--bc1175-Q40.fastq,MSC20_80_5_,sample,2,Fall,September,no,CAGAGAGG-AGGCTTAG,RandolphS_20,9/22/20,9,20,8.95,49.18,unknown,yes
+Worth2_21,8/31/21,w2-831-5.fastq,2_8_31_5,sample,3,Summer,August,no,GGACTCCT-AGAGGATA,Worth2_21,8/31/21,8,21,8.68,8.98,unknown,yes
+Worth2_21,8/31/21,w2-831-6.fastq,2_8_31_6,sample,3,Summer,August,no,GGACTCCT-TCTACTCT,Worth2_21,8/31/21,8,21,0.31,0.86,unknown,yes
+Worth2_21,7/21/21,w2-727-1.fastq,2_7_27_1,sample,3,Summer,July,no,TCCTGAGC-CTCCTTAC,Worth2_21,7/27/21,7,21,8.26,8.29,unknown,yes
 Worth1_21,9/21/21,w1-921-11.fastq,1_9_21_11,sample,3,Fall,September,no,CGTACTAG-AGAGGATA,Worth1_21,9/21/21,9,21,8.5,8.65,unknown,yes
 Worth1_21,9/21/21,w1-921-5.fastq,1_9_21_5,sample,3,Fall,September,no,TAAGGCGA-CTCCTTAC,Worth1_21,9/21/21,9,21,8.12,8.3,unknown,yes
 Worth1_21,9/21/21,w1-921-9.fastq,1_9_21_9,sample,3,Fall,September,no,CGTACTAG-GCGATCTA,Worth1_21,9/21/21,9,21,8.61,8.93,unknown,yes
 Worth1_21,9/29/21,w1-929-5.fastq,1_9_29_5,sample,3,Fall,September,no,AGGCAGAA-TCTACTCT,Worth1_21,9/29/21,9,21,0.43,4.7,unknown,yes
 Worth1_21,9/30/21,w1-930-1.fastq,1_9_30_1,sample,3,Fall,September,no,AGGCAGAA-TATGCAGT,Worth1_21,9/30/21,9,21,9.33,9.68,unknown,yes
 Worth1_21,9/30/21,w1-930-2.fastq,1_9_30_2,sample,3,Fall,September,no,AGGCAGAA-TACTCCTT,Worth1_21,9/30/21,9,21,8.28,8.34,unknown,yes
-Randolph Shed,9/22/20,bc1108--bc1111-Q40.fastq,MSC20_80_2_,sample,2,Fall,September,no,GGACTCCT-AGGCTTAG,RandolphS_20,9/22/20,9,20,4.92,23.71,unknown,yes
-Randolph Shed,9/22/20,bc1112--bc1175-Q40.fastq,MSC20_80_5_,sample,2,Fall,September,no,CAGAGAGG-AGGCTTAG,RandolphS_20,9/22/20,9,20,8.95,49.18,unknown,yes
