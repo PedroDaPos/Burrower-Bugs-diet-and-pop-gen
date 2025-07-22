@@ -1291,7 +1291,7 @@ occurrence_pbb
 dev.off()
 ```
 
-```{r bananas}
+```{r banana}
 musa <- p_data.clean_mlt %>% filter(Genus == "Musa") %>% filter(Abundance > 0) 
 musa$Site <- factor(musa$Site, levels = c("Colony", "Randolph Pivot", "Worth1_20"), 
                                   labels = c("Colony", "RandolphP_20", "Worth1_20"))
