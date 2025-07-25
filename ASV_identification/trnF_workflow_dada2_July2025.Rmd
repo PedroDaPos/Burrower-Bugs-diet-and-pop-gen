@@ -845,9 +845,9 @@ generate_pcoa_plot <- function(ps_object, add_genus_vectors = TRUE, p_max = 0.05
     ggside::theme_ggside_void() +
     scale_fill_brewer(palette = "Paired")
   
-  # Add species vectors if requested
+  # Add genus vectors if requested
   if (add_genus_vectors) {
-    # Extract OTU table and convert to relative abundances
+    # Extract ASV table and convert to relative abundances
     genus_phyloseq <- aggregate_taxa(ps_object, level = "Genus")
     otu_data <- as.data.frame(t(otu_table(genus_phyloseq)))
     
@@ -1146,7 +1146,6 @@ q <- process_phyloseq(p_data.clean)
 
 
 ```{r heatmapForAugust}
-
 heatmap_data <- p_data.clean %>%
   subset_samples(!is.na(Site)) %>%
   subset_samples(Site != "Colony") %>%
@@ -1195,7 +1194,11 @@ heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(ae
     panel.grid.major = element_blank(), 
     panel.grid.minor = element_blank(),
     strip.text.x = element_text(face = "italic"),
-    panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
+```
+
+
+```{r heatmapForAugust}
+panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 # Save image in PDF
 pdf("./Figures/heatmap.pdf",height=6,width=6)
@@ -1309,19 +1312,18 @@ ggsave("./Figures/sesamum.pdf")
 
 ```{r corediet}
 # Prepare data and aggregate to Genus
-diet_raw <- p_data.clean %>% 
-  subset_samples(!is.na(Site)) %>%
-  subset_samples(Site != "Colony") %>%
-  subset_taxa(Kingdom == "Viridiplantae") %>%
-  subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
-    prune_taxa(taxa_sums(.) > 0, .) %>%
-    prune_samples(sample_sums(.) > 0, .) %>%
-  microbiome::aggregate_taxa(., "Genus")
+# diet_raw <- p_data.clean %>% 
+#   subset_samples(!is.na(Site)) %>%
+#   subset_samples(Site != "Colony") %>%
+#   subset_taxa(Kingdom == "Viridiplantae") %>%
+#   subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
+#     prune_taxa(taxa_sums(.) > 0, .) %>%
+#     prune_samples(sample_sums(.) > 0, .) %>%
+#   microbiome::aggregate_taxa(., "Genus")
 
 # Transform data to binary (presence/absence)
 
-diet_binary <- microViz::tax_transform(diet_raw, "binary")
-
+# diet_binary <- microViz::tax_transform(diet_raw, "binary")
 
 ```
 
@@ -1333,5 +1335,8 @@ write.csv(p_data.clean_mlt, "./all_processed_PBB_data.csv")
 
 ```
 
-
-
+Citations
+```{r citations}
+#library(grateful)
+cite_packages(out.format = "docx", out.dir = "./", omit = c("BiocStyle", "GUniFrac", "microViz"))
+```
