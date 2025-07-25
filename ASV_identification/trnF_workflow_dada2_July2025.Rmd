@@ -451,13 +451,13 @@ p_data.clean <- phyloseq(otu_table(p_data.cleanOTU, taxa_are_rows = FALSE),
 
 
 >Blast was executed using script in blast_ASV_pbb123.sh
-PBB123_asv_11182024.csv (taxonomy table) was edited and every NA was changed if taxonomic information was available (a blast hit result)
+PBB123_asv_11182024a.csv (taxonomy table) was edited and every NA was changed if taxonomic information was available (a blast hit result)
 NOTE: taxonomical assignments ranged from about 95% to 100% and some NAs remained with no classification via Blast
 
 #### Add new taxonomical information to Phyloseq object
 
 ```{r add-new-taxon-table}
-new_tax_table <- read.csv("PBB123_asv_11182024.csv", row.names = 1)
+new_tax_table <- read.csv("PBB123_asv_11182024a.csv", row.names = 1)
 new_tax <- tax_table(as.matrix(new_tax_table))
 tax_table(p_data.clean) <- new_tax
 ```
