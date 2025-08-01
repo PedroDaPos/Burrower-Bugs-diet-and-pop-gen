@@ -812,23 +812,23 @@ generate_pcoa_plot <- function(ps_object, add_genus_vectors = TRUE, p_max = 0.05
   # Preprocess the phyloseq object
   ps_object <- tax_fix(ps_object)
   ps_object <- phyloseq_validate(ps_object, remove_undetected = TRUE)
-  
+
   # Calculate weighted UniFrac distance
   unifracs = GUniFrac::GUniFrac(t(otu_table(ps_object)), phy_tree(ps_object), alpha = c(0, 0.5, 1))$unifracs
   wunifrac_dist <- as.dist(unifracs[, , "d_1"])
-  
+
   # Perform PCoA
   pcoa <- cmdscale(as.matrix(wunifrac_dist), eig = TRUE, k = 2)
   scores <- as.data.frame(pcoa$points)
   colnames(scores) <- c("MDS1", "MDS2")
-  
+
   # Add metadata
   metadata <- data.frame(sample_data(ps_object))
   plot_data <- cbind(scores, metadata)
-  
+
   # Create variance variable for the plot axis labels
   var_explained <- round(100 * pcoa$eig / sum(pcoa$eig), 2)
-  
+
   # Generate base PCoA plot
   pcoa_plot <- ggplot(plot_data, aes(x = MDS1, y = MDS2, color = Sp.ID, shape = Month_bias)) +
     geom_point(size = 5) +
@@ -846,36 +846,36 @@ generate_pcoa_plot <- function(ps_object, add_genus_vectors = TRUE, p_max = 0.05
     ggside::scale_ysidex_discrete(labels = NULL) +
     ggside::theme_ggside_void() +
     scale_fill_brewer(palette = "Paired")
-  
-  # Add species vectors if requested
+
+  # Add genus vectors if requested
   if (add_genus_vectors) {
-    # Extract OTU table and convert to relative abundances
+    # Extract ASV table and convert to relative abundances
     genus_phyloseq <- aggregate_taxa(ps_object, level = "Genus")
     otu_data <- as.data.frame(t(otu_table(genus_phyloseq)))
-    
+
     otu_rel <- otu_data / rowSums(otu_data)  # Convert to relative abundances
-    
+
     # Fit species vectors using envfit
     genus_fit <- envfit(scores, otu_rel, permutations = 999)
-    
+
     # Extract significant species vectors
     genus_scores <- as.data.frame(genus_fit$vectors$arrows)
     genus_pvals <- genus_fit$vectors$pvals
     significant_genus <- genus_scores[genus_pvals <= p_max, ]
-    
+
     if (nrow(significant_genus) > 0) {
       # Scale vectors for better visualization
       significant_genus <- significant_genus * vector_scale
-      
+
       significant_genus$labels <- rownames(significant_genus)
       significant_genus$MDS1_end <- significant_genus$MDS1
       significant_genus$MDS2_end <- significant_genus$MDS2
-      
+
       # Add vectors to plot
       pcoa_plot <- pcoa_plot +
-        geom_segment(data = significant_genus, 
+        geom_segment(data = significant_genus,
                      aes(x = 0, y = 0, xend = MDS1_end, yend = MDS2_end),
-                     arrow = arrow(length = unit(0.3, "cm")), 
+                     arrow = arrow(length = unit(0.3, "cm")),
                      color = "black", size = 0.8, alpha = 0.7,
                      inherit.aes = FALSE) +
         geom_text_repel(data = significant_genus,
@@ -889,7 +889,7 @@ generate_pcoa_plot <- function(ps_object, add_genus_vectors = TRUE, p_max = 0.05
                         segment.size = 0.2)
     }
   }
-  
+
   return(pcoa_plot)
 }
 
@@ -962,7 +962,7 @@ ggsave("./Figures/General_violin_plot_Dec2024.pdf", width=15, height=10)
 # Now let's group data by host species and plot the same type of plot again
 
 ```{r AlphaBySpecies}
-pseq_alpha_meta %>% filter(Sp.ID=="Pbilineatus") %>% mutate(Site = factor(Site, 
+pseq_alpha_meta %>% filter(Sp.ID=="Pbilineatus") %>% mutate(Site = factor(Site,
    levels = c("Randolph Pivot", "Randolph Shed", "Worth1_20", "Worth1_21", "Worth2_20", "Worth2_21"))) %>% ggviolin(., x="Site", y="Shannon", add="boxplot", fill="Site") + labs(
   x = "Sites",
   y = "Shannon index (diet diversity)",
@@ -976,7 +976,7 @@ pseq_alpha_meta %>% filter(Sp.ID=="Pbilineatus") %>% mutate(Site = factor(Site,
 
 ggsave("./Figures/Pbilineatus_alpha_diversity_per_month_Dec2024.pdf", width=25, height=10)
 
-pseq_alpha_meta %>% filter(SequenceBatch != "1") %>% filter(Sp.ID=="Dlugubris") %>% 
+pseq_alpha_meta %>% filter(SequenceBatch != "1") %>% filter(Sp.ID=="Dlugubris") %>%
   mutate(Site = factor(Site, levels = c("Randolph Pivot", "Randolph Shed", "Worth1_20", "Worth1_21", "Worth2_20", "Worth2_21"))) %>%
   ggviolin(., x="Site", y="Shannon", add="boxplot", fill="Site") +
   labs(x = "Sites", y = "Shannon index (diet diversity)",title= "*Dallasiellus lugubris*") + facet_grid(~Month, scales = "free", space = "free")+
@@ -998,14 +998,14 @@ library(grid)
 
 process_phyloseq <- function(barplot.data) {
   # Step 1: Simplify the dataset
-  barplot.clean <- barplot.data %>% 
-    psmelt() %>% 
-    filter(!is.na(Site)) %>% 
+  barplot.clean <- barplot.data %>%
+    psmelt() %>%
+    filter(!is.na(Site)) %>%
     filter(Site != "Colony") %>%
     filter(Kingdom == "Viridiplantae")
 
   # Step 2: Replace NA in "Species" column
-  filtered_no_NA <- barplot.clean %>% 
+  filtered_no_NA <- barplot.clean %>%
     mutate(Genus = ifelse(is.na(Genus) & !is.na(Family), paste0(Family, " spp."),
                     ifelse(is.na(Genus) & !is.na(Order), paste0(Order, " spp."),
                     ifelse(is.na(Genus) & !is.na(Class), paste0(Class, " spp."),
@@ -1036,9 +1036,9 @@ process_phyloseq <- function(barplot.data) {
     species_data <- filtered_no_NA %>% filter(Sp.ID == species)
 
     # Step 5.1: Select relevant columns and sum Abundance by unique combinations
-    species_simple <- species_data %>% 
-      select(Sample, Abundance, Site, Month, Genus) %>% 
-      group_by(Sample, Site, Month, Genus) %>% 
+    species_simple <- species_data %>%
+      select(Sample, Abundance, Site, Month, Genus) %>%
+      group_by(Sample, Site, Month, Genus) %>%
       summarize(Abundance = sum(Abundance), .groups = "drop")
 
     # Step 5.2: Process data for each "Month"
@@ -1047,48 +1047,48 @@ process_phyloseq <- function(barplot.data) {
       month_data <- month_data %>% group_by(Sample) %>%
       mutate(Abundance = ifelse(!Abundance == "0", Abundance/sum(Abundance), Abundance)) %>%
       ungroup()
-      
+
     # Step 5.3: Find the 20 most abundant "Genus" and rename others as "Other"
-      sort.Genus <- month_data %>% 
+      sort.Genus <- month_data %>%
         count(Genus, wt = Abundance) %>%
         arrange(n) %>%
         mutate(relativeAb = n/sum(n)) %>%
         mutate(cumRelAb = cumsum(relativeAb)) %>%
         filter(cumRelAb >= 0.3) %>%
         pull(Genus)
-      
+
       sort.Genus[length(sort.Genus)+1] <- "Arachis" # Add peanuts (Arachis) back, to make sure it is not placed in the "Other" category in the next step
       sort.Genus <- unique(sort.Genus)
 
-      month_data <- month_data %>% 
-        mutate(Genus = ifelse(Genus %in% sort.Genus, Genus, "Other")) %>% group_by(Sample, Site, Month, Genus) %>% 
+      month_data <- month_data %>%
+        mutate(Genus = ifelse(Genus %in% sort.Genus, Genus, "Other")) %>% group_by(Sample, Site, Month, Genus) %>%
       summarize(Abundance = sum(Abundance), .groups = "drop")
 
 
     # Step 5.4: Sum Abundance and sort Genus
-      sort.Genus <- month_data %>% 
-        count(Genus, wt = Abundance) %>% 
-        arrange(desc(n)) %>% 
+      sort.Genus <- month_data %>%
+        count(Genus, wt = Abundance) %>%
+        arrange(desc(n)) %>%
         pull(Genus)
 
     # Step 5.5: Get Sample order
-      Sample.order <- month_data %>% 
-        filter(Genus == sort.Genus[1]) %>% 
-        arrange(desc(Abundance)) %>% 
+      Sample.order <- month_data %>%
+        filter(Genus == sort.Genus[1]) %>%
+        arrange(desc(Abundance)) %>%
         pull(Sample)
 
     # Step 5.6: Factor Sample/Genus and save month-specific object
-      month_data <- month_data %>% 
-        mutate(Sample = factor(Sample, levels = Sample.order)) %>% 
+      month_data <- month_data %>%
+        mutate(Sample = factor(Sample, levels = Sample.order)) %>%
         mutate(Genus = factor(Genus, levels = rev(sort.Genus)))
 
       all_genus[[paste(species, month, sep = "_")]] <- unique(month_data$Genus)
 
     # Step 6: Create ggplot stacked barplot
-      month_plot <- month_data %>% 
-        ggplot(aes(x = Sample, y = Abundance, fill = Genus)) + 
-        geom_bar(stat = "identity", width = 1) + 
-        theme_classic() + 
+      month_plot <- month_data %>%
+        ggplot(aes(x = Sample, y = Abundance, fill = Genus)) +
+        geom_bar(stat = "identity", width = 1) +
+        theme_classic() +
         theme(axis.text.x = element_blank(),
               axis.title.x = element_blank(),
               axis.text.y = element_blank(),
@@ -1096,8 +1096,8 @@ process_phyloseq <- function(barplot.data) {
               axis.ticks.x = element_blank(),
               axis.ticks.y = element_blank(),
               axis.line = element_blank(),
-              legend.position = "none") + 
-        labs(title = month) + 
+              legend.position = "none") +
+        labs(title = month) +
         theme(plot.title = element_text(hjust = 0.5)) +
         scale_fill_manual(values=color_palette)
 
@@ -1113,11 +1113,11 @@ process_phyloseq <- function(barplot.data) {
     months <- sort(unique(filtered_no_NA %>% filter(Sp.ID == species) %>% pull(Month)))
     month_plot_list <- lapply(months, function(month) month_plots[[paste(species, month, sep = "_")]])
     species_title <- ifelse(species == "Pbilineatus", "Pangaeus bilineatus", "Dallasiellus lugubris")
-    
-  
+
+
     species_plots[[species]] <- cowplot::plot_grid(
-      plotlist = month_plot_list, 
-      ncol = length(months) 
+      plotlist = month_plot_list,
+      ncol = length(months)
     )
   }
 
@@ -1125,7 +1125,7 @@ process_phyloseq <- function(barplot.data) {
   final_plot
   #ggsave("./Figures/top70percentAbundanceGenus.pdf", width = 15, height = 10)
 
-  
+
   # Extra step: make a legend plot that unifies taxa from all months/species data. This plot can be manually added using Inkscape
   legend_plot <- ggplot(data.frame(Genus = names(color_palette)[names(color_palette) %in% unlist(all_genus)], Value = 1), aes(x = Genus, y = Value, fill = Genus)) + geom_col() +
   scale_fill_manual(values = color_palette) +
@@ -1148,7 +1148,6 @@ q <- process_phyloseq(p_data.clean)
 
 
 ```{r heatmapForAugust}
-
 heatmap_data <- p_data.clean %>%
   subset_samples(!is.na(Site)) %>%
   subset_samples(Site != "Colony") %>%
@@ -1181,12 +1180,12 @@ heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(ae
     aes(label = round(Abundance,2)),
     size = 1.25,
         color = ifelse(
-      abs(heatmap_data$Abundance) > 0.6, 
-      'white', 
+      abs(heatmap_data$Abundance) > 0.6,
+      'white',
       'black'
     )
   ) +
-  theme_minimal() + 
+  theme_minimal() +
   facet_grid(~Sp.ID, scales = "free") +
   theme(
     text = element_text(size = 14),
@@ -1194,10 +1193,14 @@ heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(ae
     axis.ticks.y = element_blank(),
     axis.text.x=element_blank(),
     axis.text.y=element_markdown(),
-    panel.grid.major = element_blank(), 
+    panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     strip.text.x = element_text(face = "italic"),
-    panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
+```
+
+
+```{r heatmapForAugust}
+panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 # Save image in PDF
 # pdf("./Figures/heatmap.pdf",height=6,width=6)
@@ -1256,11 +1259,11 @@ Still no differences!
 
 ```{r species-overlap-histogram}
 histogram_data <- p_data.clean %>%
-    psmelt() %>% 
-    filter(!is.na(Site)) %>% 
+    psmelt() %>%
+    filter(!is.na(Site)) %>%
     filter(Site != "Colony") %>%
     filter(Sp.ID != "unknown") %>%
-    select(c("Indiv_ID", "Sp.ID", "Season", "collection_date")) %>% 
+    select(c("Indiv_ID", "Sp.ID", "Season", "collection_date")) %>%
   summarise(.by = "Indiv_ID", across(c("Sp.ID", "Season", "collection_date"), max))
 histogram_data$Year <- format(as.Date(histogram_data$collection_date), "%Y")
 histogram_data$Month <- format(as.Date(histogram_data$collection_date), "%m")
@@ -1294,20 +1297,38 @@ dev.off()
 ```
 
 ```{r banana}
-musa <- p_data.clean_mlt %>% filter(Genus == "Musa") %>% filter(Abundance > 0) 
-musa$Site <- factor(musa$Site, levels = c("Colony", "Randolph Pivot", "Worth1_20"), 
+musa <- p_data.clean_mlt %>% filter(Genus == "Musa") %>% filter(Abundance > 0)
+musa$Site <- factor(musa$Site, levels = c("Colony", "Randolph Pivot", "Worth1_20"),
                                   labels = c("Colony", "RandolphP_20", "Worth1_20"))
 musa %>% ggplot(., aes(x = Site, y = Abundance, fill = Indiv_ID)) + geom_bar(stat = "identity") + theme_classic()
 ggsave("./Figures/banana.pdf")
 ```
 
 ```{r sesamum}
-sesamum<- p_data.clean_mlt %>% filter(Genus == "Sesamum") %>% filter(Abundance > 0) 
-sesamum$Site <- factor(sesamum$Site, levels = c("Randolph Shed", "Worth1_20", "Worth2_20", "Worth1_21", "Worth2_21"), 
+sesamum<- p_data.clean_mlt %>% filter(Genus == "Sesamum") %>% filter(Abundance > 0)
+sesamum$Site <- factor(sesamum$Site, levels = c("Randolph Shed", "Worth1_20", "Worth2_20", "Worth1_21", "Worth2_21"),
                                   labels = c("RandolphS_20", "Worth1_20", "Worth2_20", "Worth1_21", "Worth2_21"))
 sesamum %>% ggplot(., aes(x = Site, y = Abundance, fill = Indiv_ID)) + geom_bar(stat = "identity") + theme_classic()
 ggsave("./Figures/sesamum.pdf")
 ```
+
+```{r corediet}
+# Prepare data and aggregate to Genus
+# diet_raw <- p_data.clean %>%
+#   subset_samples(!is.na(Site)) %>%
+#   subset_samples(Site != "Colony") %>%
+#   subset_taxa(Kingdom == "Viridiplantae") %>%
+#   subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
+#     prune_taxa(taxa_sums(.) > 0, .) %>%
+#     prune_samples(sample_sums(.) > 0, .) %>%
+#   microbiome::aggregate_taxa(., "Genus")
+
+# Transform data to binary (presence/absence)
+
+# diet_binary <- microViz::tax_transform(diet_raw, "binary")
+
+```
+
 
 ```{r savetable}
 p_data.clean_mlt <- psmelt(p_data.clean)
@@ -1378,7 +1399,7 @@ p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(Site == "Colony
 ```
 
 ```{r sample processed burrower bug species count}
-sp_updated_p_data.clean <- p_data.clean 
+sp_updated_p_data.clean <- p_data.clean
 sample_data(sp_updated_p_data.clean) <- metadata_stat
 # Pbilineatus samples
 print("Number of Pangaeus bilineatus samples")
