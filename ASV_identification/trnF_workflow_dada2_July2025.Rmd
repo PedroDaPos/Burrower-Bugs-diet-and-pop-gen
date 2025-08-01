@@ -316,6 +316,7 @@ metadata <- read.table("./metadata_assembly/Burrower_bugs_metadata_DEC32024.csv"
 metadata$SequenceBatch <- as.factor(metadata$SequenceBatch)
 metadata$collection_date <- as.Date(metadata$collection_date, format = "%m/%d/%y")
 metadata$Month <- factor(metadata$Month, levels = month.name)
+metadata_up <- metadata
 ```
 
 Make Phyloseq object
@@ -525,7 +526,8 @@ Load Data
 
 ```{r phyloseq-load-improved-data}
 p_data.cleanOTU <- readRDS("RDS/p_data.cleanOTU_cleaningcompleted.rds")
-metadata <- readRDS("RDS/p_data.cleanSampleData_cleaningcompleted.rds")
+#metadata <- readRDS("RDS/p_data.cleanSampleData_cleaningcompleted.rds")
+metadata <- metadata_up
 p_data.cleanOTUTaxaTable <- readRDS("RDS/p_data.cleanOTUTaxaTable_cleaningcompleted.rds")
 p_data.cleanOTURefSeq <- readRDS("RDS/p_data.cleanOTURefSeq_cleaningcompleted.rds")
 ```
@@ -1198,9 +1200,9 @@ heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(ae
     panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 # Save image in PDF
-pdf("./Figures/heatmap.pdf",height=6,width=6)
-heatmap_august
-dev.off()
+# pdf("./Figures/heatmap.pdf",height=6,width=6)
+# heatmap_august
+# dev.off()
 ```
 
 So, is diet different among PBBs for August samples?
@@ -1307,31 +1309,80 @@ sesamum %>% ggplot(., aes(x = Site, y = Abundance, fill = Indiv_ID)) + geom_bar(
 ggsave("./Figures/sesamum.pdf")
 ```
 
-```{r corediet}
-# Prepare data and aggregate to Genus
-diet_raw <- p_data.clean %>% 
-  subset_samples(!is.na(Site)) %>%
-  subset_samples(Site != "Colony") %>%
-  subset_taxa(Kingdom == "Viridiplantae") %>%
-  subset_samples(Sp.ID == "Dlugubris" | Sp.ID == "Pbilineatus") %>%
-    prune_taxa(taxa_sums(.) > 0, .) %>%
-    prune_samples(sample_sums(.) > 0, .) %>%
-  microbiome::aggregate_taxa(., "Genus")
-
-# Transform data to binary (presence/absence)
-
-diet_binary <- microViz::tax_transform(diet_raw, "binary")
-
-
-```
-
-
 ```{r savetable}
 p_data.clean_mlt <- psmelt(p_data.clean)
 
 write.csv(p_data.clean_mlt, "./all_processed_PBB_data.csv")
-
 ```
 
+# General statistics for the manuscript
 
+How many samples identified using RAD-seq data?
 
+```{r samples identified stats}
+# use metadata file where bowtie data had been added
+metadata_stat <- read.table("./metadata_assembly/Burrower_bugs_metadata_DEC32024.csv", row.names = 3, sep = ",", header = TRUE)
+metadata_stat$SequenceBatch <- as.factor(metadata$SequenceBatch)
+metadata_stat$collection_date <- as.Date(metadata$collection_date, format = "%m/%d/%y")
+metadata_stat$Month <- factor(metadata$Month, levels = month.name)
+
+# Total number of samples (excluding controls for primer contamination and samples where barcode information was lost)
+print("Total number of samples")
+metadata_stat %>% filter(!is.na(Site)) %>% nrow()
+
+print("Total number of samples with RAD-seq data available")
+metadata_stat %>% filter(mol.ID == "yes") %>% nrow()
+
+# Pbilineatus
+print("Pbilineatus samples")
+metadata_stat %>% filter(mol.ID == "yes") %>% filter(Sp.ID == "Pbilineatus") %>% nrow()
+
+# Dlugubris
+print("Dlugubris samples")
+metadata_stat %>% filter(mol.ID == "yes") %>% filter(Sp.ID == "Dlugubris") %>% nrow()
+
+# Unknown
+print("Unknown samples")
+metadata_stat %>% filter(mol.ID == "yes") %>% filter(Sp.ID == "unknown") %>% nrow()
+```
+
+How many reads processed? How many samples at the start and at the end?
+```{r sample raw reads count}
+# Raw read count can be obtained by counting sequences in all sequence files, regardless of whether they are sample or control
+prim4 <- as.data.frame(rbind(prim1, prim2, prim3))
+print("All raw reads")
+sum(prim4$reads.in)
+print("Raw Reads(RR): Only samples, excluding primer controls, and samples with barcodes missing")
+exclude_samples <- c("control_F1.fastq", "control_F12.fastq", "control_F16.fastq", "control_F34.fastq", "control_F60.fastq", "control_F61.fastq", "control_F64.fastq", "control_F69.fastq", "control_F74.fastq", "control_F79.fastq", "MikeCrossley-UGA-022421-bc1097--bc1105-Q40.fastq", "MikeCrossley-UGA-022421-bc1099--bc1105-Q40.fastq", "MikeCrossley-UGA-022421-bc1105--bc1111-Q40.fastq", "MikeCrossley-UGA-022421-bc1111--bc1112-Q40.fastq", "MikeCrossley-UGA-022421-bc1111--bc1169-Q40.fastq", "unassigned.fastq", "bc1099--bc1108-Q40.fastq")
+sum(prim4[!(row.names(prim4) %in% exclude_samples),]$reads.in)
+print("RR: Only field samples")
+colony_samples <- c("bc1099--bc1103-Q40.fastq", "bc1098--bc1106-Q40.fastq", "bc1099--bc1104-Q40.fastq", "bc1099--bc1105-Q40.fastq", "bc1099--bc1169-Q40.fastq", "bc1097--bc1103-Q40.fastq", "bc1097--bc1104-Q40.fastq", "bc1097--bc1105-Q40.fastq", "bc1097--bc1106-Q40.fastq")
+exclude_samples2 <- c(exclude_samples, colony_samples)
+sum(prim4[!(row.names(prim4) %in% exclude_samples2),]$reads.in)
+print("Number of field samples")
+length(prim4[!(row.names(prim4) %in% exclude_samples2),]$reads.in)
+print("RR: Only colony samples")
+sum(prim4[(row.names(prim4) %in% colony_samples),]$reads.in)
+```
+```{r sample processed reads count}
+# number of field samples kept after quality control, and number of sequences
+print("Number of sequences kept for field samples")
+p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% sample_sums() %>% as.data.frame() %>% sum(is.numeric(.))
+print("Number of samples (field) kept")
+p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% sample_sums() %>% as.data.frame() %>% nrow()
+# number of colony samples kept after quality control, and number of sequences
+print("Number of sequences kept for colony")
+p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(Site == "Colony") %>% sample_sums() %>% as.data.frame() %>% sum(is.numeric(.))
+print("Number of samples (colony) kept")
+p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(Site == "Colony") %>% sample_sums() %>% as.data.frame() %>% nrow()
+```
+
+```{r sample processed burrower bug species count}
+sp_updated_p_data.clean <- p_data.clean 
+sample_data(sp_updated_p_data.clean) <- metadata_stat
+# Pbilineatus samples
+print("Number of Pangaeus bilineatus samples")
+sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus") %>% sample_sums() %>% as.data.frame() %>% nrow()
+print("Number of Dallasiellus lugubris samples")
+sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Dlugubris") %>% sample_sums() %>% as.data.frame() %>% nrow()
+```
