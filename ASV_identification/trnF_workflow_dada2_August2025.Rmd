@@ -1383,6 +1383,36 @@ sample_data(sp_updated_p_data.clean) <- metadata_stat
 # Pbilineatus samples
 print("Number of Pangaeus bilineatus samples")
 sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus") %>% sample_sums() %>% as.data.frame() %>% nrow()
+# Dlugubris samples
 print("Number of Dallasiellus lugubris samples")
 sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Dlugubris") %>% sample_sums() %>% as.data.frame() %>% nrow()
 ```
+
+```{r diet-table}
+dietP <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus")
+dietP <- as(otu_table(dietP), "matrix")
+dietP <- as.data.frame(dietP)
+dietP$Species <- row.names(dietP)
+dietP <- dietP %>% rowwise() %>% mutate(Pangaeus_bilineatus = sum(c_across(where(is.numeric)), na.rm = TRUE), 
+                                       Sample_presence_Pb = paste0(sum(c_across(where(is.numeric)) > 0, na.rm = TRUE), " (",
+                                                                   sum(!is.na(c_across(where(is.numeric)))), ")")) %>% ungroup()
+write.csv(dietP, "./Pb_diet_per_sample.csv")
+
+dietD <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(Sp.ID == "Dlugubris")
+dietD <- as(otu_table(dietD), "matrix")
+dietD <- as.data.frame(dietD)
+dietD$Species <- row.names(dietD)
+dietD <- dietD %>% rowwise() %>% mutate(Dallasiellus_lugubris = sum(c_across(where(is.numeric)), na.rm = TRUE), 
+                                       Sample_presence_Dl = paste0(sum(c_across(where(is.numeric)) > 0, na.rm = TRUE), " (",
+                                                                   sum(!is.na(c_across(where(is.numeric)))), ")")) %>% ungroup()
+write.csv(dietD, "./Dl_diet_per_sample.csv")
+
+diet_all <- full_join(dietP, dietD, by = "Species") %>% select(Species, Pangaeus_bilineatus, Sample_presence_Pb,
+                                                                 Dallasiellus_lugubris, 
+                                                                 Sample_presence_Dl) %>% mutate(sum_taxa = Pangaeus_bilineatus + 
+                                                                                                  Dallasiellus_lugubris) %>% 
+                                                                                                  filter(sum_taxa > 0)
+write.csv(diet_all, "./diet_summary_both_Pb_and_Dl.csv")
+```
+
+
