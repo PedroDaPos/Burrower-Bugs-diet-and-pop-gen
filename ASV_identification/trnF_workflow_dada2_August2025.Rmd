@@ -1176,7 +1176,7 @@ heatmap_data$Genus <- factor(heatmap_data$Genus, levels = c("Wahlenbergia", "Unk
                                                           "<i>Allium</i>"),)
 #create heatmap
 heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(aes(fill=Abundance)) +
-  scale_fill_gradient(low = "lightgray", high = "darkblue") +
+  scale_fill_gradient(low = "white", high = "darkblue") +
     geom_text(
     aes(label = round(Abundance,2)),
     size = 1.25,
@@ -1200,9 +1200,9 @@ heatmap_august <- ggplot(heatmap_data, aes(x= Sample, y = Genus)) + geom_tile(ae
     panel.border = element_rect(colour = "black", fill=NA, linewidth=1))
 
 # Save image in PDF
-# pdf("./Figures/heatmap.pdf",height=6,width=6)
-# heatmap_august
-# dev.off()
+ pdf("./Figures/heatmap_whitebackground.pdf",height=6,width=6)
+ heatmap_august
+ dev.off()
 ```
 
 So, is diet different among PBBs for August samples?
@@ -1377,6 +1377,8 @@ print("Number of samples (colony) kept")
 p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(Site == "Colony") %>% sample_sums() %>% as.data.frame() %>% nrow()
 ```
 
+
+
 ```{r sample processed burrower bug species count}
 sp_updated_p_data.clean <- p_data.clean 
 sample_data(sp_updated_p_data.clean) <- metadata_stat
@@ -1388,31 +1390,37 @@ print("Number of Dallasiellus lugubris samples")
 sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Dlugubris") %>% sample_sums() %>% as.data.frame() %>% nrow()
 ```
 
+```{r save-summary-table}
+write.csv(sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% psmelt(), "./all_data_processed.csv", row.names = FALSE)
+```
+
 ```{r diet-table}
 dietP <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus")
 dietP <- as(otu_table(dietP), "matrix")
 dietP <- as.data.frame(dietP)
 dietP$Species <- row.names(dietP)
+row.names(dietP) <- NULL
 dietP <- dietP %>% rowwise() %>% mutate(Pangaeus_bilineatus = sum(c_across(where(is.numeric)), na.rm = TRUE), 
-                                       Sample_presence_Pb = paste0(sum(c_across(where(is.numeric)) > 0, na.rm = TRUE), " (",
-                                                                   sum(!is.na(c_across(where(is.numeric)))), ")")) %>% ungroup()
-write.csv(dietP, "./Pb_diet_per_sample.csv")
+                                       Sample_presence_Pb = paste0(sum(c_across(1:62) > 0, na.rm = TRUE), " (",
+                                                                   sum(!is.na(c_across(1:62))), ")")) %>% ungroup()
+write.csv(dietP, "./Pb_diet_per_sample.csv", row.names = FALSE)
 
 dietD <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(Sp.ID == "Dlugubris")
 dietD <- as(otu_table(dietD), "matrix")
 dietD <- as.data.frame(dietD)
 dietD$Species <- row.names(dietD)
+row.names(dietD) <- NULL
 dietD <- dietD %>% rowwise() %>% mutate(Dallasiellus_lugubris = sum(c_across(where(is.numeric)), na.rm = TRUE), 
-                                       Sample_presence_Dl = paste0(sum(c_across(where(is.numeric)) > 0, na.rm = TRUE), " (",
-                                                                   sum(!is.na(c_across(where(is.numeric)))), ")")) %>% ungroup()
-write.csv(dietD, "./Dl_diet_per_sample.csv")
+                                       Sample_presence_Dl = paste0(sum(c_across(1:61) > 0, na.rm = TRUE), " (",
+                                                                   sum(!is.na(c_across(1:61))), ")")) %>% ungroup()
+write.csv(dietD, "./Dl_diet_per_sample.csv", row.names = FALSE)
 
 diet_all <- full_join(dietP, dietD, by = "Species") %>% select(Species, Pangaeus_bilineatus, Sample_presence_Pb,
                                                                  Dallasiellus_lugubris, 
                                                                  Sample_presence_Dl) %>% mutate(sum_taxa = Pangaeus_bilineatus + 
                                                                                                   Dallasiellus_lugubris) %>% 
                                                                                                   filter(sum_taxa > 0)
-write.csv(diet_all, "./diet_summary_both_Pb_and_Dl.csv")
+write.csv(diet_all, "./diet_summary_both_Pb_and_Dl.csv", row.names = FALSE)
 ```
 
 
