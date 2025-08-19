@@ -1145,7 +1145,259 @@ q <- process_phyloseq(p_data.clean)
 
 ```
 
+```{r alternative-barplot-averages}
+library(cowplot)
+library(grid)
+process_phyloseq_horizontal <- function(p_data.clean) {
+  # Step 1 Simplify the dataset
+  p_data_test <- p_data.clean %>% 
+    psmelt() %>% 
+    filter(!is.na(Site)) %>% 
+    filter(Site != "Colony") %>%
+    filter(Kingdom == "Viridiplantae")
+  
+  # Step 2 Replace NA in "Genus" column with higher taxonomic levels
+  filtered_no_NA <- p_data_test %>% 
+    mutate(Genus = 
+              ifelse(is.na(Genus) & !is.na(Family), paste0(Family, " spp."),
+              ifelse(is.na(Genus) & !is.na(Order), paste0(Order, " spp."),
+              ifelse(is.na(Genus) & !is.na(Class), paste0(Class, " spp."),
+              ifelse(is.na(Genus) & !is.na(Phylum), paste0(Phylum, " spp."),
+              ifelse(is.na(Genus) & !is.na(Kingdom), paste0(Kingdom, " spp."), Genus))))))
+  
+  # Step 3: Define species to process
+  species_list <- c("Pbilineatus", "Dlugubris")
+  
+  # Check if species exist in data
+  available_species <- unique(filtered_no_NA$Sp.ID)
+  species_list <- species_list[species_list %in% available_species]
+  
+  # Step 4 Calculate averaged data for each species-month combination
+  averaged_data <- filtered_no_NA %>% select(!Species) %>%
+    filter(Sp.ID %in% species_list) %>%
+    group_by(Sp.ID, Month, Genus) %>%
+    filter(Abundance>0) %>%
+    summarize(
+      mean_abundance = mean(Abundance, na.rm = TRUE),
+      sample_count = n(),
+      .groups = "drop"
+    ) %>%
+    filter(!is.na(Month), !is.na(Genus))
 
+  # Step 5 Get sample counts per species-month for labeling
+  sample_counts <- filtered_no_NA %>%
+    filter(Sp.ID %in% species_list) %>%
+    group_by(Sp.ID, Month) %>%
+    summarize(n_samples = n_distinct(Sample), .groups = "drop")
+  
+  # Step 6 Calculate relative abundances within each species-month
+  averaged_data <- averaged_data %>%
+    group_by(Sp.ID, Month) %>%
+    mutate(rel_abundance = mean_abundance / sum(mean_abundance)) %>%
+    ungroup()
+  
+  # Step 7 Name "Other" every taxa with relative (average) abundance smaller than 5%
+  top_genera_by_month <- averaged_data %>%
+    group_by(Sp.ID, Month) %>%
+    arrange(desc(rel_abundance)) %>%
+    #mutate(cumulative_abundance = cumsum(rel_abundance)) %>%
+    #filter(cumulative_abundance <= 0.90) %>%
+    filter(rel_abundance >= 0.05) %>%
+    select(Sp.ID, Month, Genus, rel_abundance)
+  
+  low_genera_by_month <- averaged_data %>%
+    group_by(Sp.ID, Month) %>%
+    arrange(desc(rel_abundance)) %>%
+    filter(rel_abundance < 0.05) %>%
+    select(Sp.ID, Month, Genus, rel_abundance) %>%
+    mutate(
+        Genus = case_when(
+        Genus == "Arachis" ~ "Arachis",  # Always keep Arachis separate
+        TRUE ~ "Other"
+      ))
+  
+  processed_data <- bind_rows(top_genera_by_month, low_genera_by_month)
+  
+  # Step 8 Create "Other" category for non-top genera
+  processed_data <- processed_data %>%
+    group_by(Sp.ID, Month, Genus) %>%
+    summarize(
+      total_rel_abundance = sum(rel_abundance),
+      .groups = "drop"
+    )
+  
+  # Step 9 Create unified color palette for all top genera
+  all_top_genera <- unique(processed_data$Genus)
+  all_top_genera <- all_top_genera[all_top_genera != "Other"]
+  
+  # Create color palette
+  n_colors <- length(all_top_genera)
+  if(n_colors <= 8) {
+    color_palette <- RColorBrewer::brewer.pal(n = max(3, n_colors), name = "Dark2")[1:n_colors]
+  } else {
+    color_palette <- colorRampPalette(RColorBrewer::brewer.pal(8, "Dark2"))(n_colors)
+  }
+  
+  names(color_palette) <- all_top_genera
+  
+  # Add "Other" and set Arachis to black
+  color_palette <- c(color_palette, "Other" = "lightgray")
+  if("Arachis" %in% names(color_palette)) {
+    color_palette["Arachis"] <- "black"
+  }
+  
+  # Step 10 Create month ordering (check for different month formats)
+  month_order <- function(months) {
+    # Remove NA values first
+    months <- months[!is.na(months)]
+    
+    if(length(months) == 0) {
+      warning("No valid months found!")
+      return(character(0))
+    }
+    
+    if(!any(is.na(months))) {
+      # All months are numeric
+      return(sort(unique(months)))
+    } else {
+      # Check if months are month names or abbreviations
+      month_names <- c("January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December")
+      month_abbr <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+      
+      if(any(months %in% month_names)) {
+        return(months[order(match(months, month_names))])
+      } else if(any(months %in% month_abbr)) {
+        return(months[order(match(months, month_abbr))])
+      } else {
+        # Fall back to alphabetical order
+        return(sort(unique(months)))
+      }
+    }
+  }
+  
+  # Step 11 Create plots for each species
+  species_plots <- list()
+  
+  for(species in species_list) {
+    species_data <- processed_data %>% filter(Sp.ID == species)
+    species_samples <- sample_counts %>% filter(Sp.ID == species)
+    
+    if(nrow(species_data) == 0) {
+      warning(paste("No data found for species:", species))
+      next
+    }
+    
+    # Order months chronologically
+    available_months <- month_order(unique(species_data$Month))
+  
+    # Create month labels with sample counts
+    month_labels <- sapply(available_months, function(m) {
+      n_samples <- species_samples$n_samples[species_samples$Month == m]
+      if(length(n_samples) == 0) n_samples <- 0
+      paste0(m, " (n=", n_samples, ")")
+    })
+    
+    # Prepare data for plotting
+    plot_data <- species_data %>%
+      mutate(Month = factor(Month, levels = rev(available_months))) %>%  # Reverse for bottom-to-top order
+      mutate(Month_label = factor(Month, levels = rev(available_months), labels = rev(month_labels)))
+    
+    # Order genera by overall abundance
+    genus_order <- plot_data %>%
+      group_by(Genus) %>%
+      summarize(total_abundance = sum(total_rel_abundance), .groups = "drop") %>%
+      arrange(total_abundance) %>%
+      pull(Genus)
+    
+    # Ensure "Other" is always at the bottom of the stack
+    if("Other" %in% genus_order) {
+      genus_order <- c(genus_order[genus_order != "Other"], "Other")
+    }
+    
+    plot_data <- plot_data %>%
+      mutate(Genus = factor(Genus, levels = genus_order))
+    
+    # Create the plot
+    species_title <- case_when(
+      species == "Pbilineatus" ~ "Pangaeus bilineatus",
+      species == "Dlugubris" ~ "Dallasiellus lugubris",
+      TRUE ~ species
+    )
+    
+    p <- ggplot(plot_data, aes(x = total_rel_abundance, y = Month_label, fill = Genus)) +
+      geom_bar(stat = "identity", width = 0.8) +
+      scale_fill_manual(values = color_palette, name = "Plant Genus") +
+      labs(
+        title = species_title,
+        x = "Relative Abundance",
+        y = "Month"
+      ) +
+      theme_classic() +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14, face = "italic"),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 12),
+        legend.position = "none"  # Will add unified legend later
+      ) +
+      scale_x_continuous(expand = c(0, 0), limits = c(0, 1))
+    
+    species_plots[[species]] <- p
+  }
+  
+  # Step 12 Combine plots
+  if(length(species_plots) == 0) {
+    stop("No valid plots could be created")
+  }
+  
+  # Arrange plots vertically (Pbilineatus on top, Dlugubris below)
+  plot_list <- list()
+  if("Pbilineatus" %in% names(species_plots)) {
+    plot_list <- c(plot_list, list(species_plots[["Pbilineatus"]]))
+  }
+  if("Dlugubris" %in% names(species_plots)) {
+    plot_list <- c(plot_list, list(species_plots[["Dlugubris"]]))
+  }
+  
+  combined_plot <- plot_grid(plotlist = plot_list, ncol = 1, align = "v")
+  
+  # Step 13 Create unified legend
+  legend_genera <- names(color_palette)
+  legend_plot <- ggplot(
+    data.frame(Genus = legend_genera, Value = 1), 
+    aes(x = Genus, y = Value, fill = Genus)
+  ) + 
+    geom_col() +
+    scale_fill_manual(values = color_palette) +
+    theme_void() +
+    theme(legend.position = "bottom") +
+    guides(fill = guide_legend(nrow = 3, title = "Plant Genus"))
+  
+  legend <- suppressWarnings(get_legend(legend_plot))
+  
+  # Step 14 Final plot with legend
+  final_plot <- plot_grid(combined_plot, legend, ncol = 1, rel_heights = c(0.85, 0.15))
+
+  
+  ggsave("./Figures/horizontal_diet_barplots2.pdf", plot = final_plot, width = 12, height = 8)
+  ggsave("./Figures/legend_horizontal_diet_barplots2.pdf", plot = legend_plot, width = 12, height = 8)
+  
+  return(list(
+    final_plot = final_plot,
+    species_plots = species_plots,
+    color_palette = color_palette,
+    legend = legend_plot,
+    processed_data = processed_data,
+    sample_counts = sample_counts,
+    averaged_data = averaged_data
+  ))
+}
+
+result <- process_phyloseq_horizontal(p_data.clean)
+print(result$final_plot)
+```
 
 ```{r heatmapForAugust}
 
@@ -1395,7 +1647,7 @@ write.csv(sp_updated_p_data.clean %>% subset_samples(!is.na(Site)) %>% psmelt(),
 ```
 
 ```{r diet-table}
-dietP <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus")
+dietP <- sp_updated_p_data.clean %>% microbiome::aggregate_taxa(., "Genus") %>% subset_samples(!Site == "Colony") %>% subset_samples(Sp.ID == "Pbilineatus") %>% subset_samples(!is.na(Site))
 dietP <- as(otu_table(dietP), "matrix")
 dietP <- as.data.frame(dietP)
 dietP$Species <- row.names(dietP)
